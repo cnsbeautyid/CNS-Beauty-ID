@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getMappedConcerns } from "@/services/catalog/concerns";
+import { getFeaturedProducts } from "@/services/catalog/products";
 import type { HomePageData } from "@/types/content";
 
 import { getPublishedTestimonials } from "./testimonials";
@@ -11,12 +12,15 @@ import { getPublishedTestimonials } from "./testimonials";
  * so the homepage never shows invented products, reviews or articles.
  */
 export async function getHomePageData(): Promise<HomePageData> {
-  const [concerns, testimonials] = await Promise.all([getMappedConcerns(), getPublishedTestimonials({ limit: 3 })]);
+  const [concerns, featuredProducts, testimonials] = await Promise.all([
+    getMappedConcerns(),
+    getFeaturedProducts(4),
+    getPublishedTestimonials({ limit: 3 }),
+  ]);
 
   return {
     concerns,
-    // Phase 4: active products selected as featured by the catalog service.
-    featuredProducts: [],
+    featuredProducts,
     testimonials,
     // Journal phase: published content_articles.
     articles: [],

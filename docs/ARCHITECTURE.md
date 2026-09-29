@@ -2,9 +2,77 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-29 (Phase 3)
-- **Current phase:** Phase 3 About / Brand, done and validated
-- **Next phase:** Phase 4 Product Catalog (needs a Supabase project, product master data and the DB hardening migration: see §2 and §6)
+- **Last updated:** 2026-09-29 (Phase 4)
+- **Current phase:** Phase 4 Product Catalog, done and validated
+- **Next phase:** Phase 5 Product Detail (needs claim approval for product_benefits: see below)
+
+## ADR-001: The live Supabase project is the schema source of truth (Phase 4)
+
+- **Context:** the CNS Supabase project `CNS-Beauty-Skincare`
+  (`unnnblkqzexvuachlbol`, ap-southeast-1) already had 18 migrations
+  (2026-08-19 → 2026-09-18) and 68 tables. RLS is on everywhere, and it holds
+  real catalog data: 2 active products with prices, 10 categories, 7 concerns,
+  5 skin types, ingredients and knowledge documents. Its schema differs from
+  the repo's `supabase/schema.sql`.
+- **Decision:** build on the live schema. `supabase/schema.sql` is marked
+  superseded. `src/types/database.ts` is generated from the live project and
+  is the typed contract. Regenerate it after every migration.
+- **Why:**
+  - The live schema holds the real data.
+  - Its RLS is stronger: staff actions go through `private.has_any_role()`, and public reads cover active products, approved ingredients, approved reviews, and consented + approved customer stories.
+  - It already provides `search_catalog()` and tsvector search.
+  - The §2 defects in `schema.sql` (self-role escalation, anonymous session leaks) don't exist here: roles live in `user_roles`, which only the owner can manage.
+- **Consequences:**
+  - Roles are `app_role` = customer / admin / owner, not the 6 roles in the brief. Content editor and customer service roles would need a migration.
+  - There's no `product_claims` table (see Phase 5 blocker).
+  - Migration SQL isn't in the repo yet. Fetch it with `supabase link` + `supabase migration fetch` (needs the DB password) before the first schema change from this repo.
+- **Environment:** `.env.local` (gitignored) holds the URL and the publishable
+  key "cnsbeatyskincare". No service-role key is needed for the public catalog.
+
+## Phase 4 summary
+
+- **Routes:**
+  - `/produk`: all products, with search, filters, sort and pagination.
+  - `/produk/kategori/[slug]`: one category. Unknown slugs return a real 404, because the listing's `loading.tsx` is scoped to a `(listing)` route group so it can't start streaming first.
+- **URL state:** `q`, `kebutuhan` (concern), `kulit` (skin type), `harga`
+  (price range), `urut` (sort) and `halaman` (page), parsed with Zod in
+  `src/services/catalog/query.ts`. Invalid values are dropped, never errors.
+  Filtered and searched views are `noindex`, and the base listing has a canonical URL.
+- **Data layer** (`src/services/catalog/`):
+  - `products.ts`: `listProducts`, `getFeaturedProducts`, `getCatalogFacets`, `getCategoryBySlug`. They use a cookie-less anonymous client (`src/lib/supabase/public.ts`), so RLS applies and pages stay cacheable.
+  - `mapper.ts`: row → `ProductCardData`. Prices are passed through untouched.
+  - `concerns.ts`: now queries real mapped concerns.
+  - Search uses the existing `search_catalog()` RPC, ordered by relevance.
+- **UI** (`src/features/catalog/`):
+  - Filter panel made of links (works without JS and can be crawled).
+  - Mobile filter drawer, sort select and search, both on `next/form` so they work without JS.
+  - Category chips, active-filter chips, pagination.
+  - Every state: loading skeleton, "Katalog sedang disiapkan" (not configured), error with retry, no results, success.
+- **The homepage and `/manfaat` now use real data:** concern cards and featured
+  products (`is_featured`). Both revalidate every 5 minutes (`revalidate = 300`).
+- **Cards** show "Stok habis" when `stock = 0`, and hide ratings when there
+  are no reviews.
+
+**Data observations (for CNS Beauty):**
+1. Both products have `stock = 0`, so both show "Stok habis".
+2. **Product images are missing.** Storage buckets are empty, and the
+   `/images/products/...` paths refer to files from an earlier site. Images only
+   render from this project's public Storage (`resolveImageUrl`). Upload them to
+   the `catalog` bucket and update the URLs.
+3. **Security, before Phase 7:** the `payment-proofs` storage bucket is
+   **public**, so payment receipts would be readable by URL. Make it private,
+   with signed URLs.
+4. **Security:** leaked-password protection is off (Supabase Auth setting).
+5. The categories (Face Care, Body Care, Serum, Face Mist, Body Lotion,
+   Sunscreen, Fragrance plus 3 collections) differ from the brief's IA (Facial
+   Wash, Moisturizer…). The DB is followed.
+
+**Phase 5 blocker, claim governance:** `product_benefits` (11 rows) are
+public for active products but have **no approval status**. Some are claims
+the brief says need evidence ("Menenangkan kulit sensitif", "Anti-Aging
+Benefits", "Skin Regeneration"). The product detail page shouldn't show them
+until an approval workflow exists: a status column plus an RLS change, or a
+`product_claims` table.
 
 ## Phase 3 summary
 
@@ -239,3 +307,4 @@ Follow master prompt §26, with these gates:
 | 1 | pass | pass | 22/22 | pass | 40 pass, 6 skipped (device-specific), including axe WCAG 2.2 AA on 4 views × 2 devices |
 | 2 | pass | pass | 23/23 | pass | 56 pass, 6 skipped (device-specific) |
 | 3 | pass | pass | 23/23 | pass | 79 pass, 7 skipped (device-specific) |
+| 4 | pass | pass | 38/38 | pass | 101 pass, 9 skipped (device-specific). Catalog E2E runs against the live public catalog; stable across 2 runs |

@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     "CNS Beauty Skincare by Wina Ranesa. Temukan ritual perawatan kulit yang tepat untukmu, dengan bantuan CNS Beauty AI.",
 };
 
+// Catalog data (featured products, concerns) refreshes every 5 minutes.
+export const revalidate = 300;
+
 // Order follows master prompt §6. Data-driven sections render only when
 // their source has real, approved data.
 export default async function HomePage() {

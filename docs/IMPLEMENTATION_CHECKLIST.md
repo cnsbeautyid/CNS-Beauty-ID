@@ -2,12 +2,12 @@
 
 ## P0
 - [x] Repository foundation (Phase 0 — see docs/ARCHITECTURE.md)
-- [ ] Supabase project/config (local config + SSR clients done; project not linked, schema not applied)
+- [x] Supabase project/config (live project CNS-Beauty-Skincare, ADR-001; migrations not yet fetched into repo)
 - [ ] Auth
 - [x] Design system (Phase 1 — preview at /design-system)
 - [x] Header/footer (Phase 1)
 - [x] Homepage (Phase 2 — data sections pending catalog, reviews, journal)
-- [ ] Product catalog
+- [x] Product catalog (Phase 4 — /produk, /produk/kategori/[slug])
 - [ ] Product detail
 - [ ] Cart
 - [ ] Checkout

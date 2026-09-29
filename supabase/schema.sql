@@ -1,3 +1,10 @@
+-- ============================================================================
+-- SUPERSEDED (Phase 4, 2026-09-29): the live Supabase project
+-- "CNS-Beauty-Skincare" (unnnblkqzexvuachlbol) is the schema source of truth.
+-- Do NOT apply this file. Typed contract: src/types/database.ts.
+-- See docs/ARCHITECTURE.md, ADR-001. Kept for reference only.
+-- ============================================================================
+--
 -- CNS Beauty Commerce — Supabase PostgreSQL Schema v1
 -- Generated from CNS Beauty PRD v1.0.
 -- Implementation note: names/types below are an implementation baseline.

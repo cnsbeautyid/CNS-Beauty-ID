@@ -22,7 +22,8 @@ type ProductCardProps = {
 };
 
 export function ProductCard({ product, actions, headingLevel: Heading = "h3", priority = false }: ProductCardProps) {
-  const { slug, name, shortDescription, price, compareAtPrice, rating, badge, image } = product;
+  const { slug, name, shortDescription, price, compareAtPrice, rating, badge, image, availability } = product;
+  const soldOut = availability === "out_of_stock";
 
   return (
     <article className="group relative flex h-full flex-col">
@@ -44,10 +45,11 @@ export function ProductCard({ product, actions, headingLevel: Heading = "h3", pr
             </text>
           </svg>
         )}
-        {badge && (
-          <Badge tone="brand" className="absolute top-3 left-3">
-            {badge}
-          </Badge>
+        {(badge || soldOut) && (
+          <div className="absolute top-3 left-3 flex flex-col items-start gap-1">
+            {badge && <Badge tone="brand">{badge}</Badge>}
+            {soldOut && <Badge tone="neutral">Stok habis</Badge>}
+          </div>
         )}
       </div>
 

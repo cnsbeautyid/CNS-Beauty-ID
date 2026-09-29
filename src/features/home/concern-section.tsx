@@ -5,6 +5,7 @@ import { Container } from "@/components/layout/container";
 import { SectionHeader } from "@/components/layout/section-header";
 import { ROUTES } from "@/constants/routes";
 import { HOME_COPY } from "@/content/home";
+import { buildCatalogHref } from "@/services/catalog/query";
 import type { SkinConcern } from "@/types/content";
 
 /** Only concerns with mapped products are passed in; renders nothing otherwise. */
@@ -20,7 +21,7 @@ export function ConcernSection({ concerns }: { concerns: readonly SkinConcern[] 
           {concerns.map((concern) => (
             <li key={concern.slug}>
               <Link
-                href={`${ROUTES.products}?concern=${encodeURIComponent(concern.slug)}`}
+                href={buildCatalogHref(ROUTES.products, {}, { kebutuhan: concern.slug })}
                 className="group flex h-full flex-col rounded-lg border border-border bg-background p-5 transition-colors duration-(--duration-base) hover:border-brand-rose-gold desktop:p-6"
               >
                 <span className="font-display text-h4 text-text-primary">{concern.label}</span>

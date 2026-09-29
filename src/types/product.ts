@@ -17,6 +17,8 @@ export type ProductCardData = {
   price: Money;
   compareAtPrice?: Money;
   rating?: { average: number; count: number };
+  /** From backend stock; never inferred in the UI. */
+  availability?: "in_stock" | "out_of_stock";
   /** Only APPROVED + PUBLISHED badge copy may be passed here. */
   badge?: string;
   image?: ProductImage;
