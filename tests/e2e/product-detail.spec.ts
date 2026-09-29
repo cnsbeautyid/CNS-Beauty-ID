@@ -22,9 +22,12 @@ test.describe("Product detail", () => {
 
     const main = page.getByRole("main");
     await expect(main.getByText(/Rp\s?\d{1,3}(\.\d{3})+/).first()).toBeVisible();
-    await expect(main.getByText(/^(Tersedia|Stok habis)$/).first()).toBeVisible();
-    // The online cart arrives in Phase 6; the button is honestly disabled.
-    await expect(main.getByRole("button", { name: /Tambah ke Keranjang|Stok habis/ }).first()).toBeDisabled();
+    const availability = main.getByText(/^(Tersedia|Stok habis)$/).first();
+    await expect(availability).toBeVisible();
+    // Sold-out products can't be added; in-stock products can.
+    const button = main.getByRole("button", { name: /Tambah ke Keranjang|Stok habis/ }).first();
+    if ((await availability.textContent()) === "Stok habis") await expect(button).toBeDisabled();
+    else await expect(button).toBeEnabled();
   });
 
   test("emits Product and Breadcrumb structured data with backend price", async ({ page }) => {

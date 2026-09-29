@@ -6,7 +6,7 @@ import { clientEnv } from "@/lib/env/client";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { ProductCardData } from "@/types/product";
 
-import { PRODUCT_CARD_COLUMNS, toProductCard } from "./mapper";
+import { PRODUCT_CARD_COLUMNS, resolveImageUrl, toProductCard } from "./mapper";
 import { PAGE_SIZE, priceRange, type CatalogQuery } from "./query";
 
 type Db = NonNullable<ReturnType<typeof createPublicClient>>;
@@ -171,6 +171,25 @@ export const getCatalogFacets = cache(async (): Promise<CatalogFacets | null> =>
   }
   return { categories: categories.data ?? [], concerns: concerns.data ?? [], skinTypes: skinTypes.data ?? [] };
 });
+
+export type ProductSummary = { id: string; slug: string; name: string; image?: { src: string; alt: string } };
+
+/** Names/images for cart rows (including ones the quote rejected). Active only (RLS). */
+export async function getProductSummaries(ids: readonly string[]): Promise<Map<string, ProductSummary>> {
+  const summaries = new Map<string, ProductSummary>();
+  const db = createPublicClient();
+  if (!db || ids.length === 0) return summaries;
+  const { data, error } = await db.from("products").select("id, slug, name, thumbnail_url").in("id", [...ids]);
+  if (error) {
+    console.error("[catalog] getProductSummaries failed", error);
+    return summaries;
+  }
+  for (const row of data) {
+    const src = resolveImageUrl(row.thumbnail_url, supabaseUrl);
+    summaries.set(row.id, { id: row.id, slug: row.slug, name: row.name, image: src ? { src, alt: row.name } : undefined });
+  }
+  return summaries;
+}
 
 export async function getCategoryBySlug(slug: string) {
   const facets = await getCatalogFacets();
