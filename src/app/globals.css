@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+/*
+ * CNS Beauty design tokens — single source of truth.
+ *
+ * Tailwind's default palette, fonts, radii, shadows and breakpoints are reset
+ * so only CNS tokens generate utilities. Add a token here before using a new
+ * value anywhere else. See docs/DESIGN_TOKENS.md for usage and contrast rules.
+ */
+
+@theme {
+  /* ---- Reset Tailwind defaults ---- */
+  --color-*: initial;
+  --font-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --breakpoint-*: initial;
+
+  /* ---- Core semantic colors (CLAUDE.md §6) ---- */
+  --color-primary: #1f1f1f;
+  --color-on-primary: #ffffff;
+  --color-secondary: #f5f1ec;
+  --color-background: #ffffff;
+  --color-surface: #faf9f7;
+  --color-text-primary: #1f1f1f;
+  --color-text-secondary: #6b6863;
+  --color-text-muted: #9b9893; /* 2.9:1 on white — large text / decorative only */
+  --color-border: #e7e2dc;
+  --color-success: #3f6b50;
+  --color-warning: #a97832;
+  --color-error: #b84a4a;
+  --color-ai-surface: #f3f0ea;
+  --color-ai-accent: #8c7a64;
+
+  /*
+   * ---- Brand accents (docs/DESIGN_SYSTEM.md §2) ----
+   * Provisional: to be reconciled with the official CNS brand identity.
+   */
+  --color-brand-cocoa: #6b3328;
+  --color-brand-cocoa-dark: #43221b;
+  --color-brand-blush: #d98f88; /* decorative / large text only */
+  --color-brand-blush-soft: #f7dcd7;
+  --color-brand-peach: #f3c7b8;
+  --color-brand-cream: #fff9f5;
+  --color-brand-ivory: #faf7f3;
+  --color-brand-beige: #ede1d7;
+  --color-brand-gold: #c99a3d; /* decorative only */
+  --color-brand-rose-gold: #c77b72; /* decorative / large text only */
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* ---- Typography ---- */
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-body: var(--font-inter), "Inter", system-ui, sans-serif;
+
+  /* Headings scale from the mobile to the desktop size in the spec. */
+  --text-display-xl: clamp(2.5rem, 1.75rem + 3vw, 4rem);
+  --text-display-xl--line-height: 1.05;
+  --text-display-l: clamp(2.5rem, 2rem + 2vw, 3.25rem);
+  --text-display-l--line-height: 1.1;
+  --text-h1: clamp(2rem, 1.625rem + 1.5vw, 2.75rem);
+  --text-h1--line-height: 1.15;
+  --text-h2: clamp(1.75rem, 1.5rem + 1vw, 2.25rem);
+  --text-h2--line-height: 1.2;
+  --text-h3: clamp(1.375rem, 1.2rem + 0.75vw, 1.75rem);
+  --text-h3--line-height: 1.25;
+  --text-h4: 1.375rem;
+  --text-h4--line-height: 1.3;
+  --text-body-l: 1.125rem;
+  --text-body-l--line-height: 1.6;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-body-s: 0.875rem;
+  --text-body-s--line-height: 1.5;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+
+  /* Letter spacing for uppercase eyebrow labels. */
+  --tracking-eyebrow: 0.3em;
+
+  /* ---- Spacing: Tailwind's 4px base unit (--spacing: 0.25rem) is kept ---- */
+
+  /* ---- Radius ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* ---- Shadows: restrained ---- */
+  --shadow-sm: 0 1px 2px rgb(31 31 31 / 0.04);
+  --shadow-md: 0 8px 24px rgb(31 31 31 / 0.06);
+  --shadow-lg: 0 16px 48px rgb(31 31 31 / 0.1);
+
+  /* ---- Breakpoints (CLAUDE.md §11). Mobile is the unprefixed default. ---- */
+  --breakpoint-tablet: 40rem; /* 640px */
+  --breakpoint-desktop: 64rem; /* 1024px */
+  --breakpoint-wide: 90rem; /* 1440px */
+
+  /* ---- Motion (DESIGN_SYSTEM.md §14) ---- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+}
+
+/* Section rhythm: 64px mobile, 96px desktop, 128px wide. Utility: py-section. */
+:root {
+  --section-y: 4rem;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
+  --duration-section: 400ms;
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --section-y: 6rem;
+  }
+}
+
+@media (min-width: 90rem) {
+  :root {
+    --section-y: 8rem;
+  }
+}
+
+@theme inline {
+  --spacing-section: var(--section-y);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background-color: var(--color-brand-blush-soft);
+    color: var(--color-text-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
