@@ -25,6 +25,7 @@ test.describe("Accessibility (axe, WCAG 2.2 AA)", () => {
     "/produk",
     "/produk?q=zzqqxx",
     "/produk/licorice-moisturizer-skin-glow",
+    "/cart",
   ]) {
     test(`brand page ${path}`, async ({ page }) => {
       await page.goto(path);

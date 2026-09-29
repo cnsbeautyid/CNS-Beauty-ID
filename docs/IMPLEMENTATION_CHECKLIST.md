@@ -9,7 +9,7 @@
 - [x] Homepage (Phase 2 — data sections pending catalog, reviews, journal)
 - [x] Product catalog (Phase 4 — /produk, /produk/kategori/[slug])
 - [x] Product detail (Phase 5 — /produk/[slug]; claim copy gated)
-- [ ] Cart
+- [x] Cart (Phase 6 — guest cookie cart, backend quote_cart totals; DB cart after login in Phase 8)
 - [ ] Checkout
 - [ ] Order
 - [ ] Basic AI

@@ -2,9 +2,51 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-29 (Phase 5)
-- **Current phase:** Phase 5 Product Detail, done and validated
-- **Next phase:** Phase 6 Cart (server-side cart and quote over the live `carts`/`cart_items` tables)
+- **Last updated:** 2026-09-29 (Phase 6)
+- **Current phase:** Phase 6 Cart, done and validated
+- **Next phase:** Phase 7 Checkout (fix the public `payment-proofs` bucket first)
+
+## Phase 6 summary
+
+- **Guest cart:** the httpOnly cookie `cns_cart` (`src/services/cart/cookie.ts`)
+  holds `{v: 1, items: [{p, v?, q}], coupon?}`: what the customer wants, never
+  prices. It's SameSite=Lax, Secure in production, and lasts 30 days.
+  - `parseCart()` validates with Zod. A tampered or outdated cookie becomes an empty cart, and duplicate lines are merged.
+  - Limits: 20 lines, quantity 1–99.
+  - DB carts (`carts.user_id` NOT NULL) need a signed-in user and take over after login in Phase 8.
+- **Authoritative totals:** `quoteCart()` (`src/services/cart/quote.ts`, server-only)
+  calls `public.quote_cart` with the service-role client.
+  - `p_user_id` comes only from `getSessionUserId()` (Supabase `getClaims`), never from the browser.
+  - The response is validated against a Zod contract (`quote-schema.ts`). The UI shows subtotal, discount, shipping, total and errors exactly as returned and computes nothing.
+  - EXECUTE on `quote_cart` stays limited to postgres and service_role.
+  - Without `SUPABASE_SERVICE_ROLE_KEY`, the cart still lists the lines but says the total can't be calculated yet (the `unavailable` state).
+- **Mutations:** Server Actions in `src/features/cart/actions.ts`:
+  - add: re-checks that the product is active and has stock through the public client
+  - update quantity, remove
+  - apply coupon: stored only if the quote accepts it
+  - remove coupon
+
+  Inputs are validated with Zod, and every action calls `revalidatePath("/cart")`.
+- **`/cart`:** dynamic and noindex, with loading, empty, error, unavailable and ok states.
+  - Per-line quote errors (out of stock, insufficient stock, minimum quantity…) appear in Indonesian.
+  - Coupon form (`useActionState`).
+  - Checkout stays disabled until Phase 7, with WhatsApp ordering as the real channel.
+- **Header badge:** `CartLink` reads `GET /api/cart` (`{count}`, no-store)
+  through TanStack Query (`QueryProvider` in the storefront layout), so
+  marketing and product pages stay static/ISR.
+- **Product page:** `AddToCartButton` is enabled for in-stock products (panel
+  plus mobile sticky bar) and shows a disabled "Stok habis" otherwise. The
+  result is announced through `role="status"`.
+
+**`quote_cart` bug fix** (migration
+`supabase/migrations/20260929162248_fix_quote_cart_unassigned_variant.sql`,
+applied with owner approval on 2026-09-29):
+- **Bug:** `quote_cart` failed with "record v_variant is not assigned yet" for
+  every product without a variant, which is every product in the live catalog. So
+  both the quote and `place_order` failed.
+- **Fix:** the variant fields are stored in scalars (`v_variant_id`, `v_variant_name`, `v_variant_sku`). Pricing, coupon, loyalty and grant logic are unchanged.
+- **Verified** on the live DB: a quote for a product without a variant returns
+  `out_of_stock` for the current stock of 0. Advisors report no new findings.
 
 ## Phase 5 summary
 
@@ -19,7 +61,7 @@ Living document. Updated at the end of every phase.
   - Temukan Produk Serupa: concerns and skin types as catalog links, deliberately not "cocok untuk" (suitable for) claims
   - Ulasan (moderated reviews only, with an empty state) and Lengkapi Ritualmu (related products)
 - **Purchase:**
-  - Add to Cart stays disabled with an honest note until Phase 6.
+  - Add to Cart was disabled until Phase 6 (now live, see above).
   - "Pesan / Tanya via WhatsApp" uses the public `settings.contact` number, a real channel (`order_source` includes `whatsapp`).
 - **Mobile:** a sticky price and CTA bar sits above the safe area. The AI launcher moves up via `:root:has([data-sticky-commerce])`.
 - **SEO:**
@@ -359,3 +401,4 @@ Follow master prompt §26, with these gates:
 | 3 | pass | pass | 23/23 | pass | 79 pass, 7 skipped (device-specific) |
 | 4 | pass | pass | 38/38 | pass | 101 pass, 9 skipped (device-specific). Catalog E2E runs against the live public catalog; stable across 2 runs |
 | 5 | pass | pass | 43/43 | pass | 118 pass, 10 skipped (device-specific) |
+| 6 | pass | pass | 58/58 | pass | 132 pass, 12 skipped (device-specific; coupon test waits for the service-role key). Includes axe on `/cart` (empty and with a line) |

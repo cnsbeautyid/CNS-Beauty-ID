@@ -2,19 +2,18 @@ import { CircleAlert, CircleCheck, MessageCircle } from "lucide-react";
 
 import { AskAIButton } from "@/components/ai/ask-ai-button";
 import { Price } from "@/components/product/price";
-import { Button } from "@/components/ui/button";
+import { AddToCartButton } from "@/features/cart/add-to-cart-button";
 import { whatsappUrl } from "@/lib/utils/whatsapp";
 import type { ProductDetail } from "@/types/product";
 
 type PurchasePanelProps = {
-  product: Pick<ProductDetail, "name" | "price" | "compareAtPrice" | "availability">;
+  product: Pick<ProductDetail, "id" | "name" | "price" | "compareAtPrice" | "availability">;
   whatsapp?: string;
 };
 
 /**
- * Price, availability and purchase actions. The online cart arrives in
- * Phase 6; until then Add to Cart is disabled with an honest note and
- * WhatsApp is offered as the real ordering channel.
+ * Price, availability and purchase actions. The displayed stock is a hint;
+ * the add-to-cart action and the cart quote re-check it server-side.
  */
 export function PurchasePanel({ product, whatsapp }: PurchasePanelProps) {
   const soldOut = product.availability === "out_of_stock";
@@ -36,14 +35,12 @@ export function PurchasePanel({ product, whatsapp }: PurchasePanelProps) {
       </p>
 
       <div className="flex flex-col gap-3">
-        <Button size="lg" fullWidth disabled aria-describedby="purchase-note">
-          {soldOut ? "Stok habis" : "Tambah ke Keranjang"}
-        </Button>
-        <p id="purchase-note" className="text-caption text-text-secondary">
-          {soldOut
-            ? "Produk ini sedang tidak tersedia. Tanyakan ketersediaannya kepada tim kami."
-            : "Pemesanan online segera hadir. Untuk saat ini, pesan melalui WhatsApp."}
-        </p>
+        <AddToCartButton productId={product.id} available={!soldOut} size="lg" fullWidth />
+        {soldOut && (
+          <p className="text-caption text-text-secondary">
+            Produk ini sedang tidak tersedia. Tanyakan ketersediaannya kepada tim kami.
+          </p>
+        )}
         {whatsapp && (
           <a
             href={whatsappUrl(whatsapp, message)}
@@ -65,7 +62,7 @@ export function PurchasePanel({ product, whatsapp }: PurchasePanelProps) {
 }
 
 /** Mobile sticky bar: price + primary action, above the home indicator. */
-export function StickyCommerceBar({ product }: { product: Pick<ProductDetail, "price" | "compareAtPrice" | "availability"> }) {
+export function StickyCommerceBar({ product }: { product: Pick<ProductDetail, "id" | "price" | "compareAtPrice" | "availability"> }) {
   const soldOut = product.availability === "out_of_stock";
   return (
     <div
@@ -74,9 +71,7 @@ export function StickyCommerceBar({ product }: { product: Pick<ProductDetail, "p
     >
       <div className="flex items-center gap-4">
         <Price price={product.price} compareAt={product.compareAtPrice} className="flex-1" />
-        <Button disabled size="md">
-          {soldOut ? "Stok habis" : "Tambah ke Keranjang"}
-        </Button>
+        <AddToCartButton productId={product.id} available={!soldOut} size="md" compact />
       </div>
     </div>
   );

@@ -1,9 +1,10 @@
-import { Heart, Search, ShoppingBag, User } from "lucide-react";
+import { Heart, Search, User } from "lucide-react";
 
 import { AIHeaderButton } from "@/components/ai/ai-header-button";
 import { IconLink } from "@/components/ui/icon-button";
 import { PRIMARY_NAV } from "@/config/site";
 import { ROUTES } from "@/constants/routes";
+import { CartLink } from "@/features/cart/cart-link";
 
 import { Container } from "./container";
 import { Logo } from "./logo";
@@ -12,7 +13,6 @@ import { NavLinks } from "./nav-links";
 
 const ICON = { className: "size-5", strokeWidth: 1.5, "aria-hidden": true } as const;
 
-// The cart count arrives with the server cart in Phase 6.
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
@@ -35,7 +35,7 @@ export function SiteHeader() {
             <IconLink href={ROUTES.account.wishlist} label="Wishlist" icon={<Heart {...ICON} />} />
             <IconLink href={ROUTES.account.dashboard} label="Akun saya" icon={<User {...ICON} />} />
           </div>
-          <IconLink href={ROUTES.cart} label="Keranjang" icon={<ShoppingBag {...ICON} />} className="-mr-2 desktop:mr-0" />
+          <CartLink className="-mr-2 desktop:mr-0" />
         </div>
       </Container>
     </header>
