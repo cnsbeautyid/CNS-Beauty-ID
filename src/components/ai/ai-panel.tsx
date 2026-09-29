@@ -28,7 +28,9 @@ export function AIPanel() {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
-  const [draft, setDraft] = useState("");
+  // In the store so "ask AI" buttons elsewhere can pre-fill a question.
+  const draft = useUIStore((state) => state.aiDraft);
+  const setDraft = useUIStore((state) => state.setAIDraft);
 
   useEffect(() => {
     const dialog = ref.current;

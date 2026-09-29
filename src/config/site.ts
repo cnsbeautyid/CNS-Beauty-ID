@@ -14,7 +14,6 @@ export type Announcement = {
 export const BRAND = {
   name: "CNS Beauty",
   legalName: "CNS Beauty Skincare",
-  descriptor: "Beauty Skincare",
   founderLine: "by Wina Ranesa",
   tagline: "Your Skin. Your Ritual. Your Confidence.",
 } as const;

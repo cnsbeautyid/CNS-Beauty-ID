@@ -53,7 +53,7 @@ test.describe("AI Beauty Concierge shell", () => {
     test.skip(!isMobile, "Mobile flow");
     await page.goto("/");
     await page.getByRole("button", { name: "Buka menu" }).click();
-    await page.getByRole("button", { name: "Tanya CNS Beauty AI" }).click();
+    await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: "Tanya CNS Beauty AI" }).click();
 
     const panel = page.getByRole("dialog", { name: "CNS Beauty AI" });
     await expect(panel).toBeVisible();

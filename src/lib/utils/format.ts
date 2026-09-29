@@ -16,6 +16,18 @@ export function formatIDR(amount: number): string {
   return idrFormatter.format(amount).replace(/ /g, " ");
 }
 
+const dateFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "Asia/Jakarta",
+});
+
+/** "1 Oktober 2026" in Jakarta time, regardless of server time zone. */
+export function formatDate(iso: string): string {
+  return dateFormatter.format(new Date(iso));
+}
+
 export function formatRating(value: number): string {
   return ratingFormatter.format(value);
 }

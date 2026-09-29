@@ -2,9 +2,45 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-29 (Phase 1)
-- **Current phase:** Phase 1 Design System, done and validated
-- **Next phase:** Phase 2 Homepage (needs hero photography and approved copy: see §6)
+- **Last updated:** 2026-09-29 (Phase 2)
+- **Current phase:** Phase 2 Homepage, done and validated
+- **Next phase:** Phase 3 About / Brand
+
+## Phase 2 summary
+
+- **Homepage** (`src/app/(storefront)/page.tsx`), composed of sections in
+  `src/features/home/` and ordered as in master prompt §6: Hero → Brand values
+  → Shop by concern → Featured products → AI concierge → Founder story →
+  Testimonials → Journal → Closing CTA.
+- **Copy** lives in `src/content/home.ts`, not in components.
+- **Data-driven sections** (concerns, featured products, testimonials,
+  journal) get their data from `getHomePageData()`
+  (`src/services/content/home-page.ts`). It returns empty lists until each
+  source exists, and a section with no data doesn't render. The live homepage
+  therefore shows no invented products, prices, reviews, articles or concern
+  mappings. E2E asserts this, including that no "Rp" amount appears.
+  `/design-system` previews these sections with labelled sample data.
+- **Hero image slot** (`HOME_COPY.hero.image`) is `null`, so the arched frame
+  shows a decorative botanical line drawing. Setting it to approved
+  photography switches the frame to `next/image` with `priority`.
+- **"Ask AI" entry points** (`AskAIButton`, `AskAIChip`) open the concierge
+  with the question pre-filled but not sent. The draft lives in `ui-store`.
+- **Motion:** CSS scroll-driven section reveals with no JS. The hero doesn't
+  animate. See the motion doc.
+- **New button variants** `inverse` / `inverse-outline` for dark surfaces.
+- **Official logo** (`assets/CNS_logo_*.png`, added during Phase 2):
+  - The header/footer mark is `public/brand/cns-logo-mark.png`: 384px and 46 KB, down from the 357 KB original. It's tinted brand cocoa through a CSS mask (`.cns-logo-mark`) and always set next to the "CNS Beauty / Skincare" wordmark, because the fine lines don't read at 44px.
+  - `src/app/icon.png` (512) and `apple-icon.png` (180) come from the gold-on-black version, padded to a square.
+  - The script in the mark reads **"cinesa"**. Its relationship to the "CNS Beauty" name should be confirmed.
+  - A vector (SVG) master would render sharper than the PNGs.
+
+**Copy that needs CNS Beauty approval before launch:**
+1. The hero body says "…dengan **formula terbaik**…" (from master prompt §6).
+   "Terbaik" (best) is a superlative that should have support, or be softened
+   to the PRD wording: "Perawatan kulit berkualitas untuk membantu kulit terasa
+   lebih bersih, halus, lembut, cerah dan wangi."
+2. The four brand-value descriptions are draft value statements I wrote. They
+   aren't product claims.
 
 ## Phase 1 summary
 
@@ -158,7 +194,8 @@ Follow master prompt §26, with these gates:
 
 | Before phase | Needed from CNS Beauty / decision |
 |---|---|
-| 1 Design System | Done. Still wanted: official SVG logo (swap in `Logo`), confirmation of the color layering in §4 |
+| 1 Design System | Done. Logo integrated in Phase 2 (PNG). Still wanted: SVG master, confirmation of the color layering in §4 |
+| 3 About / Brand | Founder portrait, full approved founder story, brand values sign-off |
 | 2 Homepage | Hero photography (model plus products); approved hero/benefit copy; testimonials, if any |
 | 4 Catalog | **Product master data**; Supabase project; DB hardening migration (§2) |
 | 7 Checkout | Payment provider (e.g. Midtrans/Xendit) and shipping provider |
@@ -171,3 +208,4 @@ Follow master prompt §26, with these gates:
 |---|---|---|---|---|---|
 | 0 | pass | pass | 14/14 | pass | 11 pass, 1 skipped (keyboard test runs desktop-only) |
 | 1 | pass | pass | 22/22 | pass | 40 pass, 6 skipped (device-specific), including axe WCAG 2.2 AA on 4 views × 2 devices |
+| 2 | pass | pass | 23/23 | pass | 56 pass, 6 skipped (device-specific) |

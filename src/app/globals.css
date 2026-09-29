@@ -177,6 +177,14 @@
  * docs/CNS_BEAUTY_MOTION_SYSTEM.md.
  */
 @layer components {
+  /* Official monogram, tinted with currentColor via a mask (public/brand). */
+  .cns-logo-mark {
+    display: block;
+    aspect-ratio: 1702 / 1593;
+    background-color: currentColor;
+    mask: url("/brand/cns-logo-mark.png") center / contain no-repeat;
+  }
+
   html:has(.cns-dialog[open]:modal) {
     overflow: hidden;
   }
@@ -313,6 +321,31 @@
 
     .cns-ai-panel[open] {
       transform: translateY(1rem);
+    }
+  }
+}
+
+/*
+ * Section reveal: CSS scroll-driven animation, no JavaScript. Content is fully
+ * visible where unsupported, without JS, and under reduced motion.
+ */
+@keyframes cns-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cns-reveal {
+      animation: cns-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
     }
   }
 }

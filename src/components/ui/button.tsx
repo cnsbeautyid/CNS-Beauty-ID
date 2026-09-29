@@ -4,7 +4,7 @@ import type { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/lib/utils/cn";
 
-export type ButtonVariant = "primary" | "brand" | "secondary" | "ghost" | "ai";
+export type ButtonVariant = "primary" | "brand" | "secondary" | "ghost" | "ai" | "inverse" | "inverse-outline";
 export type ButtonSize = "sm" | "md" | "lg";
 
 type StyleProps = {
@@ -19,6 +19,9 @@ const VARIANTS: Record<ButtonVariant, string> = {
   secondary: "border border-primary text-text-primary hover:bg-secondary",
   ghost: "text-text-primary hover:bg-secondary",
   ai: "border border-ai-accent bg-ai-surface text-text-primary hover:bg-secondary",
+  // For dark surfaces (e.g. bg-brand-cocoa-dark).
+  inverse: "bg-background text-text-primary hover:bg-secondary",
+  "inverse-outline": "border border-on-primary text-on-primary hover:bg-on-primary/10",
 };
 
 // md/lg meet the 44px touch target; sm is for dense, non-primary contexts.

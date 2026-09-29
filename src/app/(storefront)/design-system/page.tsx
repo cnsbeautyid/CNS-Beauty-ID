@@ -17,8 +17,20 @@ import { EmptyState, ErrorState, LoadingState, Skeleton } from "@/components/ui/
 import { Textarea } from "@/components/ui/textarea";
 import { ROUTES } from "@/constants/routes";
 
+import { ConcernSection } from "@/features/home/concern-section";
+import { FeaturedProducts } from "@/features/home/featured-products";
+import { JournalSection } from "@/features/home/journal-section";
+import { TestimonialsSection } from "@/features/home/testimonials-section";
+
 import { OverlayDemos } from "./demos";
-import { SAMPLE_PRODUCTS, SWATCHES, TYPE_SCALE } from "./fixtures";
+import {
+  SAMPLE_ARTICLES,
+  SAMPLE_CONCERNS,
+  SAMPLE_PRODUCTS,
+  SAMPLE_TESTIMONIALS,
+  SWATCHES,
+  TYPE_SCALE,
+} from "./fixtures";
 
 export const metadata: Metadata = {
   title: "Design System",
@@ -192,6 +204,19 @@ export default async function DesignSystemPage() {
           </div>
         </Section>
       </Container>
+
+      <Container>
+        <Section id="ds-home" title="Homepage: section berbasis data">
+          <p className="max-w-2xl text-body text-text-secondary">
+            Di beranda, section ini hanya tampil jika ada data nyata (produk, kategori, ulasan dan artikel yang
+            dipublikasikan). Di sini ditampilkan dengan data contoh.
+          </p>
+        </Section>
+      </Container>
+      <ConcernSection concerns={SAMPLE_CONCERNS} />
+      <FeaturedProducts products={SAMPLE_PRODUCTS} />
+      <TestimonialsSection testimonials={SAMPLE_TESTIMONIALS} />
+      <JournalSection articles={SAMPLE_ARTICLES} />
     </main>
   );
 }

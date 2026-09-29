@@ -1,4 +1,29 @@
+import type { ArticleSummary, SkinConcern, Testimonial } from "@/types/content";
 import type { ProductCardData } from "@/types/product";
+
+// SAMPLE DATA for previewing data-driven homepage sections. Not real
+// concerns, reviews or articles.
+export const SAMPLE_CONCERNS: readonly SkinConcern[] = [
+  { slug: "contoh-kusam", label: "Contoh Kategori A", description: "Deskripsi singkat kebutuhan kulit.", productCount: 2 },
+  { slug: "contoh-kering", label: "Contoh Kategori B", productCount: 1 },
+  { slug: "contoh-sensitif", label: "Contoh Kategori C", description: "Deskripsi kedua.", productCount: 3 },
+];
+
+export const SAMPLE_TESTIMONIALS: readonly Testimonial[] = [
+  { id: "t1", quote: "Contoh testimoni untuk menguji tata letak kartu.", authorName: "Pelanggan Contoh", verifiedPurchase: true },
+  {
+    id: "t2",
+    quote: "Contoh testimoni kedua yang sedikit lebih panjang untuk melihat perilaku teks.",
+    authorName: "Pelanggan Contoh 2",
+    productName: "Produk Contoh A",
+    verifiedPurchase: false,
+  },
+];
+
+export const SAMPLE_ARTICLES: readonly ArticleSummary[] = [
+  { slug: "artikel-contoh-a", title: "Artikel Contoh A", excerpt: "Ringkasan artikel contoh.", category: "Contoh", publishedAt: "2026-10-01T09:00:00+07:00" },
+  { slug: "artikel-contoh-b", title: "Artikel Contoh B dengan Judul Lebih Panjang", publishedAt: "2026-09-15T09:00:00+07:00" },
+];
 
 // SAMPLE DATA for the internal design-system preview only. These are not CNS
 // Beauty products, prices or ratings and must never be used elsewhere.
