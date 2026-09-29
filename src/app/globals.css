@@ -114,6 +114,7 @@
   --duration-section: 400ms;
 
   /* Floating elements clear the iOS home indicator. */
+  --safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
   --fab-bottom: calc(1rem + env(safe-area-inset-bottom));
   --ai-panel-width: min(26rem, calc(100vw - 3rem));
   --ai-panel-height: min(40rem, calc(100dvh - 3rem));
@@ -122,6 +123,13 @@
 @media (min-width: 64rem) {
   :root {
     --section-y: 6rem;
+  }
+}
+
+/* The AI launcher sits above the mobile sticky commerce bar (product pages). */
+@media (max-width: 63.99rem) {
+  :root:has([data-sticky-commerce]) {
+    --fab-bottom: calc(5.5rem + env(safe-area-inset-bottom));
   }
 }
 

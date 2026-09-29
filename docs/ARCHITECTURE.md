@@ -2,9 +2,59 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-29 (Phase 4)
-- **Current phase:** Phase 4 Product Catalog, done and validated
-- **Next phase:** Phase 5 Product Detail (needs claim approval for product_benefits: see below)
+- **Last updated:** 2026-09-29 (Phase 5)
+- **Current phase:** Phase 5 Product Detail, done and validated
+- **Next phase:** Phase 6 Cart (server-side cart and quote over the live `carts`/`cart_items` tables)
+
+## Phase 5 summary
+
+- **`/produk/[slug]`:** prerendered for every active product
+  (`generateStaticParams`), revalidated every 5 minutes, and a real 404 for
+  unknown or inactive slugs. Page sections:
+  - breadcrumb and gallery (scroll-snap on mobile, stacked on desktop, no JS, brand placeholder when there are no images)
+  - name, short description, size, texture and BPOM (only when a number exists)
+  - price and availability
+  - Kandungan (approved ingredients with their approved benefit text, plus the full INCI list when present)
+  - Cara Pakai (how to use, AM/PM, routine step)
+  - Temukan Produk Serupa: concerns and skin types as catalog links, deliberately not "cocok untuk" (suitable for) claims
+  - Ulasan (moderated reviews only, with an empty state) and Lengkapi Ritualmu (related products)
+- **Purchase:**
+  - Add to Cart stays disabled with an honest note until Phase 6.
+  - "Pesan / Tanya via WhatsApp" uses the public `settings.contact` number, a real channel (`order_source` includes `whatsapp`).
+- **Mobile:** a sticky price and CTA bar sits above the safe area. The AI launcher moves up via `:root:has([data-sticky-commerce])`.
+- **SEO:**
+  - Product and BreadcrumbList JSON-LD: backend price in IDR and InStock/OutOfStock. Only factual copy goes into the description.
+  - Canonical URL and Open Graph tags.
+- **AI context:** `AIContextSetter` puts `{pageType: "product", productId, productSlug, productName, categoryId}` in `src/stores/ai-store.ts` (AI state, separate from UI state). The panel shows "Kamu sedang melihat …". It's context only, never authorization. Phase 9 sends it to the backend.
+
+**Claim governance, in the database** (migration
+`supabase/migrations/20260929155121_product_claim_governance.sql`, applied
+to the live project with owner approval on 2026-09-29):
+- **Why:** products.description / positioning, product_benefits and
+  product_faqs were public but had no approval state, and they contained
+  unverified claims ("semua jenis kulit, termasuk sensitif", "anti-aging",
+  "Skin Regeneration", "aman untuk ibu hamil dan menyusui").
+- **New columns:**
+  - `product_benefits` and `product_faqs`: `review_status` (`content_status`, default `draft`), `evidence_reference`, `reviewed_by`, `reviewed_at`.
+  - `products`: `copy_status`, `copy_evidence_reference`, `copy_reviewed_by`, `copy_reviewed_at`.
+- **RLS:** the public can read benefits and FAQs only when they're `approved`.
+  Staff policies are unchanged.
+- **Triggers** (`private.claim_review_guard`, `private.product_copy_review_guard`):
+  - Approving stamps who approved and when.
+  - Editing approved text resets it to `pending_review`, so changed claims never stay approved.
+  - Verified on the live DB inside a transaction that was rolled back.
+- **Storefront:** `selectPublicCopy()` (`src/services/catalog/claims.ts`)
+  shows description and positioning only when `copy_status = approved`, and
+  re-checks `review_status` on benefits and FAQs.
+- **State after the migration:** all 11 benefits, 2 FAQs and both products'
+  copy are `draft`, so they're hidden until an admin approves them. The anon
+  REST API now returns 0 benefits and 0 FAQs (it was 11 and 2).
+- **Impact:** any other app reading these tables with the public key also
+  sees only approved rows. No DB functions or views depended on them; only the
+  search trigger reads `positioning`.
+- **Approval flow until the admin UI (Phase 15):** an admin sets
+  `review_status` / `copy_status` to `approved`, optionally with
+  `evidence_reference`, in the Supabase dashboard.
 
 ## ADR-001: The live Supabase project is the schema source of truth (Phase 4)
 
@@ -308,3 +358,4 @@ Follow master prompt §26, with these gates:
 | 2 | pass | pass | 23/23 | pass | 56 pass, 6 skipped (device-specific) |
 | 3 | pass | pass | 23/23 | pass | 79 pass, 7 skipped (device-specific) |
 | 4 | pass | pass | 38/38 | pass | 101 pass, 9 skipped (device-specific). Catalog E2E runs against the live public catalog; stable across 2 runs |
+| 5 | pass | pass | 43/43 | pass | 118 pass, 10 skipped (device-specific) |
