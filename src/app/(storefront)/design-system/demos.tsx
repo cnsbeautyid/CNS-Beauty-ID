@@ -27,7 +27,7 @@ export function OverlayDemos() {
       <Button variant="secondary" onClick={() => setOpen("sheet")}>
         Buka bottom sheet
       </Button>
-      <Button variant="ai" leadingIcon={<Sparkles aria-hidden className="size-4" />} onClick={openAIPanel}>
+      <Button variant="ai" leadingIcon={<Sparkles aria-hidden className="size-4" />} onClick={() => openAIPanel()}>
         Buka Beauty AI
       </Button>
       <Button

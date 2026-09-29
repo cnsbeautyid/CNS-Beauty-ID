@@ -10,6 +10,9 @@ async function expectNoViolations(page: Page) {
 }
 
 test.describe("Accessibility (axe, WCAG 2.2 AA)", () => {
+  // Scroll-reveal sections start transparent; measure their final state.
+  test.use({ reducedMotion: "reduce" });
+
   test("home page", async ({ page }) => {
     await page.goto("/");
     await expectNoViolations(page);

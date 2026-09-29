@@ -12,7 +12,7 @@ export function SiteFooter() {
     <footer className="border-t border-border bg-brand-ivory">
       <Container className="grid gap-10 py-section tablet:grid-cols-2 desktop:grid-cols-4">
         <div className="flex flex-col items-start gap-4">
-          <Logo showFounder align="start" />
+          <Logo size="lg" showFounder />
           <p className="max-w-xs font-display text-body-l text-text-secondary italic">{BRAND.tagline}</p>
         </div>
 

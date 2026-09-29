@@ -35,6 +35,7 @@ Use as `duration-(--duration-base) ease-standard`. Don't introduce new durations
 | Drawer (left/right) | Slide from its own edge |
 | Bottom sheet | Slide up from the bottom |
 | AI panel | Fade plus 16px rise (floating on desktop, full screen on mobile) |
+| Section reveal | Fade plus 16px rise as the section enters the viewport (`.cns-reveal`). Never on the hero |
 | Loading | Spinner rotation, skeleton pulse. Both stop under reduced motion |
 
 ## Implementation
@@ -43,9 +44,15 @@ Use as `duration-(--duration-base) ease-standard`. Don't introduce new durations
   and `transition-behavior: allow-discrete` (`.cns-dialog`, `.cns-ai-panel` in
   `globals.css`). This keeps them in the browser's top layer with native focus
   handling, which JS animation libraries don't manage well.
-- **Motion for React (`motion`)** is added in Phase 2 for choreographed work:
-  hero entrance, scroll-linked section reveals, AI streaming and recommendation
-  cards. Each use must honor `useReducedMotion()`.
+- **Section reveals** (Phase 2) use CSS scroll-driven animation (`.cns-reveal`:
+  `animation-timeline: view()`), not JavaScript. Content is fully visible when
+  the browser lacks support, when JS hasn't loaded, and under reduced motion.
+  This keeps the SEO-first pages free of animation JS. The hero doesn't
+  animate, so the LCP text paints immediately.
+- **Motion for React (`motion`)** is reserved for state-driven UI that CSS
+  can't express: AI message streaming and recommendation cards (Phase 9).
+  Each use must honor `useReducedMotion()`. (v0.1 of this doc planned it for
+  Phase 2; CSS turned out sufficient there.)
 - Animate only `opacity` and `transform`. Never animate layout properties
   (width/height/top) on scroll.
 

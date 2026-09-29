@@ -6,7 +6,7 @@
 - [ ] Auth
 - [x] Design system (Phase 1 — preview at /design-system)
 - [x] Header/footer (Phase 1)
-- [ ] Homepage
+- [x] Homepage (Phase 2 — data sections pending catalog, reviews, journal)
 - [ ] Product catalog
 - [ ] Product detail
 - [ ] Cart

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getActiveAnnouncement } from "@/components/layout/announcement-bar";
 import { cn } from "@/lib/utils/cn";
-import { formatIDR, formatRating } from "@/lib/utils/format";
+import { formatDate, formatIDR, formatRating } from "@/lib/utils/format";
 import { isActivePath } from "@/lib/utils/nav";
 
 describe("formatIDR", () => {
@@ -20,6 +20,14 @@ describe("formatRating", () => {
   it("uses a comma decimal separator", () => {
     expect(formatRating(4.6)).toBe("4,6");
     expect(formatRating(5)).toBe("5,0");
+  });
+});
+
+describe("formatDate", () => {
+  it("formats in Indonesian, in Jakarta time", () => {
+    expect(formatDate("2026-10-01T09:00:00+07:00")).toBe("1 Oktober 2026");
+    // 20:00 UTC on 30 Sep is already 1 Oct in Jakarta.
+    expect(formatDate("2026-09-30T20:00:00Z")).toBe("1 Oktober 2026");
   });
 });
 

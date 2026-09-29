@@ -99,7 +99,7 @@ test.describe("Design-system overlays", () => {
 
   test("product cards link to Indonesian product URLs", async ({ page }) => {
     await page.goto("/design-system");
-    await expect(page.getByRole("link", { name: "Produk Contoh A" })).toHaveAttribute("href", "/produk/produk-contoh-a");
+    await expect(page.getByRole("link", { name: "Produk Contoh A" }).first()).toHaveAttribute("href", "/produk/produk-contoh-a");
     await expect(page.getByText("Belum ada produk")).toBeVisible();
   });
 });

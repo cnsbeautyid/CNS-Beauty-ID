@@ -11,7 +11,7 @@ export function AIHeaderButton({ className }: { className?: string }) {
     <Button
       variant="ai"
       size="sm"
-      onClick={openAIPanel}
+      onClick={() => openAIPanel()}
       className={className}
       leadingIcon={<Sparkles aria-hidden className="size-4 text-ai-accent" />}
     >
