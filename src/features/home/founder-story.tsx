@@ -3,10 +3,11 @@ import { Quote } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { ButtonLink } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
-import { HOME_COPY } from "@/content/home";
+import { BRAND_STORY } from "@/content/brand";
 
-export function FounderStory() {
-  const copy = HOME_COPY.founder;
+/** Founder quote and philosophy. Shown on the homepage and About page. */
+export function FounderStory({ showCta = true }: { showCta?: boolean }) {
+  const copy = BRAND_STORY.founder;
 
   return (
     <section aria-labelledby="founder-title" className="bg-brand-ivory py-section">
@@ -29,9 +30,18 @@ export function FounderStory() {
         </figure>
 
         <p className="mt-10 max-w-2xl text-body-l text-text-secondary">{copy.philosophy}</p>
-        <ButtonLink href={ROUTES.about} variant="secondary" className="mt-8">
-          {copy.cta}
-        </ButtonLink>
+        {copy.story.length > 0 && (
+          <div className="mt-6 flex max-w-2xl flex-col gap-4 text-left text-body text-text-secondary">
+            {copy.story.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        )}
+        {showCta && (
+          <ButtonLink href={ROUTES.about} variant="secondary" className="mt-8">
+            {copy.cta}
+          </ButtonLink>
+        )}
       </Container>
     </section>
   );

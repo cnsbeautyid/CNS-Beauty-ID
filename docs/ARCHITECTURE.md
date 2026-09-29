@@ -2,9 +2,38 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-29 (Phase 2)
-- **Current phase:** Phase 2 Homepage, done and validated
-- **Next phase:** Phase 3 About / Brand
+- **Last updated:** 2026-09-29 (Phase 3)
+- **Current phase:** Phase 3 About / Brand, done and validated
+- **Next phase:** Phase 4 Product Catalog (needs a Supabase project, product master data and the DB hardening migration: see §2 and §6)
+
+## Phase 3 summary
+
+- **`/tentang-kami`:** PageHero (title "CNS Beauty Skincare", subtitle "Ritual
+  Cantik untuk Diri Sendiri", arch photo slot) → FounderStory (without the
+  self-link) → "Makna Ritual" (six brand themes from PRD §12) → Brand values →
+  Closing CTA.
+- **`/manfaat`:** the four-step journey (PRD §13: concern → result → product →
+  routine) → concern mapping (hidden until the catalog maps concerns) → Glow
+  Routine three steps, described by product category only → AI / Skin Quiz
+  CTA → non-medical disclaimer.
+- **`/testimoni`:** published reviews only. Today that's an honest empty
+  state, and the page is `noindex` while it has no reviews.
+- **Shared pieces:**
+  - `PageHero`, `ArchMedia` (moved from home) and `TestimonialList`.
+  - Founder copy moved to `src/content/brand.ts`, shared by home and About.
+  - Services `getPublishedTestimonials()` and `getMappedConcerns()`, shared by the homepage and these pages.
+- **Founder story slot** (`BRAND_STORY.founder.story`) is empty on purpose.
+  We don't write Wina Ranesa's personal story for her. Paragraphs added there
+  appear on both pages.
+
+**Copy needing approval:** the six "Makna Ritual" items and the Glow Routine
+category descriptions are draft copy. The routine order (serum → moisturizer
+→ face mist) comes from CNS Beauty's Glow Routine material.
+
+**Still needed for a complete About page:** the founder-approved story, a
+founder or brand portrait (`ABOUT_COPY.hero.image`), and approved testimonials.
+Testimonial filters (product / concern / skin type, PRD §14) come with the
+reviews data.
 
 ## Phase 2 summary
 
@@ -209,3 +238,4 @@ Follow master prompt §26, with these gates:
 | 0 | pass | pass | 14/14 | pass | 11 pass, 1 skipped (keyboard test runs desktop-only) |
 | 1 | pass | pass | 22/22 | pass | 40 pass, 6 skipped (device-specific), including axe WCAG 2.2 AA on 4 views × 2 devices |
 | 2 | pass | pass | 23/23 | pass | 56 pass, 6 skipped (device-specific) |
+| 3 | pass | pass | 23/23 | pass | 79 pass, 7 skipped (device-specific) |
