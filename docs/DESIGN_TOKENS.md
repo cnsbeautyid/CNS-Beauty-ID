@@ -21,6 +21,7 @@ Core semantic tokens (from `CLAUDE.md`) carry the UI. The `brand-*` accents
 | brand-cocoa, brand-cocoa-dark | `text-brand-cocoa-dark` | Editorial headlines, emphasis |
 | brand-blush, blush-soft, peach, cream, ivory, beige | `bg-brand-cream` | Section backgrounds, decoration |
 | brand-gold, brand-rose-gold | `border-brand-gold` | Hairlines, icons, ornaments |
+| overlay | `bg-overlay` | Scrim behind modals and drawers (used by `.cns-dialog::backdrop`) |
 
 ### Contrast (WCAG 2.2 AA: 4.5:1 body text, 3:1 large text and UI)
 
@@ -72,10 +73,20 @@ Rules that follow:
 Mobile-first. `tablet:` 640px, `desktop:` 1024px, `wide:` 1440px.
 Product grid: `grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 wide:grid-cols-5`.
 
+## Using components
+
+- Preview every primitive at `/design-system` (dev server, or production with
+  `ENABLE_DESIGN_PREVIEW=true`).
+- `className` on a component is for **layout around it** (margins, grid
+  placement), never for changing its display, colors or size. `cn()` doesn't
+  resolve conflicts. Use the component's `variant`/`size`/`tone`/`align` props,
+  or wrap it in an element (e.g. `<div className="hidden desktop:flex">`).
+- Layout/motion for overlays lives in `globals.css` (`.cns-dialog`,
+  `.cns-ai-panel`). Everything else uses utilities.
+
 ## Motion
 
 Durations `--duration-fast` 150ms, `--duration-base` 200ms, `--duration-slow`
 250ms, `--duration-section` 400ms (use as `duration-(--duration-base)`).
 Easing: `ease-standard`, `ease-emphasized`. `prefers-reduced-motion` is honored
-globally. The full motion spec (`docs/CNS_BEAUTY_MOTION_SYSTEM.md`) is still
-to be written.
+globally. Full rules: `docs/CNS_BEAUTY_MOTION_SYSTEM.md`.
