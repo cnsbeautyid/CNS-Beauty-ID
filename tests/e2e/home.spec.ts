@@ -15,21 +15,35 @@ test.describe("Homepage", () => {
   });
 
   test("sections appear in the brief's order", async ({ page }) => {
-    const headings = await page.locator("main h2").allTextContents();
-    expect(headings).toEqual([
+    const order = [
       "Ritual kecil untuk mencintai diri sendiri",
+      "Apa yang ingin kamu rawat?",
+      "Produk Unggulan",
       "Temukan Ritual Skincare yang Tepat untukmu",
       "Cerita Kami",
+      "Cerita dari pelanggan kami",
+      "Edukasi & Ritual Kecantikan",
       "Mulai Ritual Cantikmu Hari Ini",
-    ]);
+    ];
+    // Data-driven sections may be absent; the ones present must keep this order.
+    const headings = await page.locator("main h2").allTextContents();
+    expect(headings).toEqual(order.filter((heading) => headings.includes(heading)));
+    for (const always of [order[0], order[3], order[4], order[7]]) expect(headings).toContain(always);
   });
 
-  test("shows no invented products, reviews, articles or concerns", async ({ page }) => {
-    // These sections render only from real, approved data (none exists yet).
-    for (const name of ["Produk Unggulan", "Cerita dari pelanggan kami", "Edukasi & Ritual Kecantikan", "Apa yang ingin kamu rawat?"]) {
+  test("data-driven sections show only catalog data", async ({ page }) => {
+    // No published reviews or articles exist yet, so these stay hidden.
+    for (const name of ["Cerita dari pelanggan kami", "Edukasi & Ritual Kecantikan"]) {
       await expect(page.getByRole("heading", { name })).toHaveCount(0);
     }
-    await expect(page.locator("main").getByText(/Rp\s?\d/)).toHaveCount(0);
+    const featured = page.getByRole("region", { name: "Produk Unggulan" });
+    for (const card of await featured.getByRole("article").all()) {
+      await expect(card.getByRole("link").first()).toHaveAttribute("href", /^\/produk\/[a-z0-9-]+$/);
+    }
+    const concerns = page.getByRole("region", { name: "Apa yang ingin kamu rawat?" });
+    for (const link of await concerns.getByRole("link").all()) {
+      await expect(link).toHaveAttribute("href", /^\/produk\?kebutuhan=[a-z0-9-]+$/);
+    }
   });
 
   test("founder story quotes Wina Ranesa", async ({ page }) => {

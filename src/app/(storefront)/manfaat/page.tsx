@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   description: "Kenali kebutuhan kulitmu dan temukan ritual perawatan CNS Beauty yang sesuai.",
 };
 
+export const revalidate = 300;
+
 export default async function BenefitsPage() {
   const concerns = await getMappedConcerns();
   const copy = BENEFITS_COPY;

@@ -13,11 +13,16 @@ const securityHeaders = [
   },
 ];
 
+// Product and content images are served from this project's public Storage.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const storagePattern = supabaseUrl ? [new URL("/storage/v1/object/public/**", supabaseUrl)] : [];
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
+    remotePatterns: storagePattern,
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

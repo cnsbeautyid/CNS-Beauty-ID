@@ -51,8 +51,11 @@ test.describe("Benefits (Manfaat)", () => {
     await expect(page.getByText("bukan diagnosis atau saran medis")).toBeVisible();
   });
 
-  test("shows no concern mapping or prices without catalog data", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Apa yang ingin kamu rawat?" })).toHaveCount(0);
+  test("concern links come from the catalog and no prices are shown", async ({ page }) => {
+    const concerns = page.getByRole("region", { name: "Apa yang ingin kamu rawat?" });
+    for (const link of await concerns.getByRole("link").all()) {
+      await expect(link).toHaveAttribute("href", /^\/produk\?kebutuhan=[a-z0-9-]+$/);
+    }
     await expect(page.locator("main").getByText(/Rp\s?\d/)).toHaveCount(0);
   });
 });
