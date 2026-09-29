@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { IconButton } from "@/components/ui/icon-button";
 import { AI_COPY, AI_QUICK_ACTIONS } from "@/config/ai";
 import { ROUTES } from "@/constants/routes";
+import { useAIStore } from "@/stores/ai-store";
 import { useUIStore } from "@/stores/ui-store";
 
 import { AIInput } from "./ai-input";
@@ -31,6 +32,7 @@ export function AIPanel() {
   // In the store so "ask AI" buttons elsewhere can pre-fill a question.
   const draft = useUIStore((state) => state.aiDraft);
   const setDraft = useUIStore((state) => state.setAIDraft);
+  const pageContext = useAIStore((state) => state.pageContext);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -91,6 +93,12 @@ export function AIPanel() {
             onClick={() => ref.current?.close()}
           />
         </div>
+
+        {pageContext?.productName && (
+          <p className="border-b border-border bg-ai-surface px-5 py-2 text-caption text-text-secondary">
+            Kamu sedang melihat <span className="font-medium text-text-primary">{pageContext.productName}</span>
+          </p>
+        )}
 
         <div role="log" aria-live="polite" aria-relevant="additions" className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-5">
           <AIMessage role="assistant">{AI_COPY.greeting}</AIMessage>

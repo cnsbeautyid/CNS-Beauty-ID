@@ -8,7 +8,7 @@
 - [x] Header/footer (Phase 1)
 - [x] Homepage (Phase 2 — data sections pending catalog, reviews, journal)
 - [x] Product catalog (Phase 4 — /produk, /produk/kategori/[slug])
-- [ ] Product detail
+- [x] Product detail (Phase 5 — /produk/[slug]; claim copy gated)
 - [ ] Cart
 - [ ] Checkout
 - [ ] Order

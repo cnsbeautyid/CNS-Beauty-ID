@@ -18,7 +18,14 @@ test.describe("Accessibility (axe, WCAG 2.2 AA)", () => {
     await expectNoViolations(page);
   });
 
-  for (const path of ["/tentang-kami", "/manfaat", "/testimoni", "/produk", "/produk?q=zzqqxx"]) {
+  for (const path of [
+    "/tentang-kami",
+    "/manfaat",
+    "/testimoni",
+    "/produk",
+    "/produk?q=zzqqxx",
+    "/produk/licorice-moisturizer-skin-glow",
+  ]) {
     test(`brand page ${path}`, async ({ page }) => {
       await page.goto(path);
       await expectNoViolations(page);

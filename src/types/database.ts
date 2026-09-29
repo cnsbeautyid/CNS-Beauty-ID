@@ -1751,22 +1751,34 @@ export type Database = {
       product_benefits: {
         Row: {
           body: string | null
+          evidence_reference: string | null
           id: string
           product_id: string
+          review_status: Database["public"]["Enums"]["content_status"]
+          reviewed_at: string | null
+          reviewed_by: string | null
           sort_order: number
           title: string
         }
         Insert: {
           body?: string | null
+          evidence_reference?: string | null
           id?: string
           product_id: string
+          review_status?: Database["public"]["Enums"]["content_status"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           sort_order?: number
           title: string
         }
         Update: {
           body?: string | null
+          evidence_reference?: string | null
           id?: string
           product_id?: string
+          review_status?: Database["public"]["Enums"]["content_status"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           sort_order?: number
           title?: string
         }
@@ -1846,23 +1858,35 @@ export type Database = {
       product_faqs: {
         Row: {
           answer: string
+          evidence_reference: string | null
           id: string
           product_id: string
           question: string
+          review_status: Database["public"]["Enums"]["content_status"]
+          reviewed_at: string | null
+          reviewed_by: string | null
           sort_order: number
         }
         Insert: {
           answer: string
+          evidence_reference?: string | null
           id?: string
           product_id: string
           question: string
+          review_status?: Database["public"]["Enums"]["content_status"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           sort_order?: number
         }
         Update: {
           answer?: string
+          evidence_reference?: string | null
           id?: string
           product_id?: string
           question?: string
+          review_status?: Database["public"]["Enums"]["content_status"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           sort_order?: number
         }
         Relationships: [
@@ -2064,6 +2088,10 @@ export type Database = {
           bpom_number: string | null
           bpom_status: string
           compare_price: number | null
+          copy_evidence_reference: string | null
+          copy_reviewed_at: string | null
+          copy_reviewed_by: string | null
+          copy_status: Database["public"]["Enums"]["content_status"]
           created_at: string
           description: string | null
           full_ingredients: string | null
@@ -2097,6 +2125,10 @@ export type Database = {
           bpom_number?: string | null
           bpom_status?: string
           compare_price?: number | null
+          copy_evidence_reference?: string | null
+          copy_reviewed_at?: string | null
+          copy_reviewed_by?: string | null
+          copy_status?: Database["public"]["Enums"]["content_status"]
           created_at?: string
           description?: string | null
           full_ingredients?: string | null
@@ -2130,6 +2162,10 @@ export type Database = {
           bpom_number?: string | null
           bpom_status?: string
           compare_price?: number | null
+          copy_evidence_reference?: string | null
+          copy_reviewed_at?: string | null
+          copy_reviewed_by?: string | null
+          copy_status?: Database["public"]["Enums"]["content_status"]
           created_at?: string
           description?: string | null
           full_ingredients?: string | null
