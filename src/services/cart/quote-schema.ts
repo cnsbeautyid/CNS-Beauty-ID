@@ -6,6 +6,15 @@ import { formatIDR } from "@/lib/utils/format";
 
 const money = z.number().int().nonnegative();
 
+export const quoteErrorSchema = z.object({
+  code: z.string(),
+  product_id: z.string().optional(),
+  available: z.number().optional(),
+  min_qty: z.number().optional(),
+  min_subtotal: z.number().optional(),
+  balance: z.number().optional(),
+});
+
 const quoteSchema = z.object({
   lines: z.array(
     z.object({
@@ -31,19 +40,10 @@ const quoteSchema = z.object({
   coupon: z.object({ id: z.uuid(), code: z.string(), type: z.string(), description: z.string().nullable() }).nullable(),
   free_shipping_threshold: money,
   pricing: z.string(),
-  errors: z.array(
-    z.object({
-      code: z.string(),
-      product_id: z.string().optional(),
-      available: z.number().optional(),
-      min_qty: z.number().optional(),
-      min_subtotal: z.number().optional(),
-      balance: z.number().optional(),
-    }),
-  ),
+  errors: z.array(quoteErrorSchema),
 });
 
-export type QuoteError = z.infer<typeof quoteSchema>["errors"][number];
+export type QuoteError = z.infer<typeof quoteErrorSchema>;
 
 export type CartQuote = {
   lines: {
@@ -133,6 +133,8 @@ export function quoteErrorMessage(error: QuoteError): string {
         : "Belanja belum memenuhi minimal kupon.";
     case "coupon_already_used":
       return "Kupon ini sudah pernah kamu gunakan.";
+    case "cart_empty":
+      return "Keranjangmu kosong.";
     case "points_insufficient":
       return "Poin tidak mencukupi.";
     default:

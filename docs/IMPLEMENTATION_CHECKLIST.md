@@ -3,15 +3,15 @@
 ## P0
 - [x] Repository foundation (Phase 0 — see docs/ARCHITECTURE.md)
 - [x] Supabase project/config (live project CNS-Beauty-Skincare, ADR-001; migrations not yet fetched into repo)
-- [ ] Auth
+- [x] Auth (Phase 7 — basic email/password sign-in, sign-up, callback, sign-out)
 - [x] Design system (Phase 1 — preview at /design-system)
 - [x] Header/footer (Phase 1)
 - [x] Homepage (Phase 2 — data sections pending catalog, reviews, journal)
 - [x] Product catalog (Phase 4 — /produk, /produk/kategori/[slug])
 - [x] Product detail (Phase 5 — /produk/[slug]; claim copy gated)
 - [x] Cart (Phase 6 — guest cookie cart, backend quote_cart totals; DB cart after login in Phase 8)
-- [ ] Checkout
-- [ ] Order
+- [x] Checkout (Phase 7 — login required, manual bank transfer, proof upload, expiry cron)
+- [x] Order (Phase 7 — order detail page; order list in Phase 8)
 - [ ] Basic AI
 - [ ] Account
 - [ ] Admin catalog/order

@@ -12,6 +12,7 @@ export function getServerEnv(): ServerEnv {
     PAYMENT_SECRET: process.env.PAYMENT_SECRET,
     WEBHOOK_SECRET: process.env.WEBHOOK_SECRET,
     ADMIN_SECRET: process.env.ADMIN_SECRET,
+    CRON_SECRET: process.env.CRON_SECRET,
   });
   return cached;
 }

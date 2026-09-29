@@ -28,6 +28,20 @@ export function formatDate(iso: string): string {
   return dateFormatter.format(new Date(iso));
 }
 
+const dateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Asia/Jakarta",
+});
+
+/** "1 Oktober 2026 pukul 14.05 WIB" in Jakarta time. */
+export function formatDateTime(iso: string): string {
+  return `${dateTimeFormatter.format(new Date(iso))} WIB`;
+}
+
 export function formatRating(value: number): string {
   return ratingFormatter.format(value);
 }
