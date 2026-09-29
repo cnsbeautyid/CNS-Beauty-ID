@@ -23,5 +23,6 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,
+    env: { ENABLE_DESIGN_PREVIEW: "true" },
   },
 });

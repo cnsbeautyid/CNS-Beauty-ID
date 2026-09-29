@@ -4,8 +4,8 @@
 - [x] Repository foundation (Phase 0 — see docs/ARCHITECTURE.md)
 - [ ] Supabase project/config (local config + SSR clients done; project not linked, schema not applied)
 - [ ] Auth
-- [ ] Design system
-- [ ] Header/footer
+- [x] Design system (Phase 1 — preview at /design-system)
+- [x] Header/footer (Phase 1)
 - [ ] Homepage
 - [ ] Product catalog
 - [ ] Product detail

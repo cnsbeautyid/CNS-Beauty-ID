@@ -2,9 +2,43 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-29 (Phase 0)
-- **Current phase:** Phase 0 Foundation, done and validated
-- **Next phase:** Phase 1 Design System (blocked items: see §6)
+- **Last updated:** 2026-09-29 (Phase 1)
+- **Current phase:** Phase 1 Design System, done and validated
+- **Next phase:** Phase 2 Homepage (needs hero photography and approved copy: see §6)
+
+## Phase 1 summary
+
+- **UI primitives** (`src/components/ui`): Button/ButtonLink, IconButton/IconLink,
+  Input, Textarea, Select, Checkbox, RadioGroup, Badge, Card, Skeleton,
+  LoadingState, EmptyState, ErrorState, and Dialog → Modal / Drawer / Sheet
+  (native `<dialog>`).
+- **Layout** (`src/components/layout`): Container, Logo (typographic
+  placeholder until the SVG arrives), AnnouncementBar (config-driven, empty by
+  default), SiteHeader (sticky; desktop nav plus actions, mobile menu/logo/cart),
+  MobileNav drawer, SiteFooter.
+- **AI** (`src/components/ai`): AILauncher (floating), AIPanel (floating
+  non-modal on desktop, full-screen modal on mobile), AIMessage, AIInput,
+  AIHeaderButton. Messages use a `role="log"` polite live region. Until Phase 9
+  every reply is an explicit "not yet available" notice plus a human handoff link.
+  Nothing is invented.
+- **Product** (`src/components/product`): ProductCard (stretched link, action
+  slot, desktop-only hover zoom), ProductCardSkeleton, ProductGrid (2/3/4/5
+  columns, empty state), Price (display only), Rating (hidden when there are
+  no reviews).
+- **Route group** `src/app/(storefront)` carries the shell. `/design-system` is
+  an internal, noindexed preview, served in production only with
+  `ENABLE_DESIGN_PREVIEW=true`. All data on it is labelled sample data.
+- **State:** `src/stores/ui-store.ts` (Zustand) holds only AI-panel UI state.
+- **Config** (`src/config`): nav, footer, announcements, social links and AI
+  quick actions. Announcements and social links are empty until approved content exists.
+- **Motion:** `docs/CNS_BEAUTY_MOTION_SYSTEM.md` (new). `motion` is deferred to Phase 2.
+
+Fixed during Phase 1 validation: class conflicts passed through `className`
+(e.g. `hidden` against a component's `inline-flex`) made desktop-only header
+icons render on mobile. The page became 583px wide, so the browser zoomed out.
+Rule, now documented in `src/lib/utils/cn.ts`: never pass a conflicting utility
+to a component; use a variant prop or a wrapper element. The E2E suite now
+checks that the layout viewport equals the device width.
 
 ---
 
@@ -124,7 +158,7 @@ Follow master prompt §26, with these gates:
 
 | Before phase | Needed from CNS Beauty / decision |
 |---|---|
-| 1 Design System | Logo (SVG); confirm the color layering in §4; `docs/CNS_BEAUTY_MOTION_SYSTEM.md` (referenced by CLAUDE.md, doesn't exist yet) |
+| 1 Design System | Done. Still wanted: official SVG logo (swap in `Logo`), confirmation of the color layering in §4 |
 | 2 Homepage | Hero photography (model plus products); approved hero/benefit copy; testimonials, if any |
 | 4 Catalog | **Product master data**; Supabase project; DB hardening migration (§2) |
 | 7 Checkout | Payment provider (e.g. Midtrans/Xendit) and shipping provider |
@@ -136,3 +170,4 @@ Follow master prompt §26, with these gates:
 | Phase | lint | typecheck | unit | build | e2e |
 |---|---|---|---|---|---|
 | 0 | pass | pass | 14/14 | pass | 11 pass, 1 skipped (keyboard test runs desktop-only) |
+| 1 | pass | pass | 22/22 | pass | 40 pass, 6 skipped (device-specific), including axe WCAG 2.2 AA on 4 views × 2 devices |

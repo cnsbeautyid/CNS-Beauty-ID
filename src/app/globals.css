@@ -49,6 +49,8 @@
 
   --color-transparent: transparent;
   --color-current: currentColor;
+  /* Scrim behind modals and drawers. */
+  --color-overlay: rgb(31 31 31 / 0.4);
 
   /* ---- Typography ---- */
   --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
@@ -110,6 +112,11 @@
   --duration-base: 200ms;
   --duration-slow: 250ms;
   --duration-section: 400ms;
+
+  /* Floating elements clear the iOS home indicator. */
+  --fab-bottom: calc(1rem + env(safe-area-inset-bottom));
+  --ai-panel-width: min(26rem, calc(100vw - 3rem));
+  --ai-panel-height: min(40rem, calc(100dvh - 3rem));
 }
 
 @media (min-width: 64rem) {
@@ -161,6 +168,152 @@
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+}
+
+/*
+ * Overlays (native <dialog>). Enter/exit use CSS transitions with
+ * @starting-style so they animate in the top layer. See
+ * docs/CNS_BEAUTY_MOTION_SYSTEM.md.
+ */
+@layer components {
+  html:has(.cns-dialog[open]:modal) {
+    overflow: hidden;
+  }
+
+  .cns-dialog,
+  .cns-ai-panel {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    max-width: none;
+    max-height: none;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    opacity: 0;
+    transition:
+      opacity var(--duration-slow) var(--ease-standard),
+      transform var(--duration-slow) var(--ease-standard),
+      overlay var(--duration-slow) allow-discrete,
+      display var(--duration-slow) allow-discrete;
+  }
+
+  .cns-dialog {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .cns-dialog::backdrop {
+    background-color: transparent;
+    transition:
+      background-color var(--duration-slow) var(--ease-standard),
+      overlay var(--duration-slow) allow-discrete,
+      display var(--duration-slow) allow-discrete;
+  }
+
+  .cns-dialog[open]::backdrop {
+    background-color: var(--color-overlay);
+  }
+
+  @starting-style {
+    .cns-dialog[open]::backdrop {
+      background-color: transparent;
+    }
+  }
+
+  .cns-dialog[data-placement="center"] {
+    inset: 0;
+    margin: auto;
+    width: calc(100% - 2rem);
+    max-width: 32rem;
+    max-height: calc(100dvh - 2rem);
+    border-radius: var(--radius-lg);
+    transform: translateY(0.5rem);
+  }
+
+  .cns-dialog[data-placement="left"],
+  .cns-dialog[data-placement="right"] {
+    inset-block: 0;
+    width: min(24rem, calc(100% - 3rem));
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .cns-dialog[data-placement="left"] {
+    left: 0;
+    right: auto;
+    transform: translateX(-100%);
+  }
+
+  .cns-dialog[data-placement="right"] {
+    left: auto;
+    right: 0;
+    transform: translateX(100%);
+  }
+
+  .cns-dialog[data-placement="bottom"] {
+    inset-inline: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    max-height: 90dvh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    transform: translateY(100%);
+  }
+
+  /* AI concierge: full screen on mobile/tablet, floating panel on desktop. */
+  .cns-ai-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    width: 100%;
+    height: 100dvh;
+    transform: translateY(1rem);
+    background-color: var(--color-background);
+  }
+
+  @media (min-width: 64rem) {
+    .cns-ai-panel {
+      inset: auto 1.5rem 1.5rem auto;
+      width: var(--ai-panel-width);
+      height: var(--ai-panel-height);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+    }
+  }
+
+  .cns-dialog[open],
+  .cns-ai-panel[open] {
+    opacity: 1;
+    transform: none;
+  }
+
+  @starting-style {
+    .cns-dialog[open],
+    .cns-ai-panel[open] {
+      opacity: 0;
+    }
+
+    .cns-dialog[data-placement="center"][open] {
+      transform: translateY(0.5rem);
+    }
+
+    .cns-dialog[data-placement="left"][open] {
+      transform: translateX(-100%);
+    }
+
+    .cns-dialog[data-placement="right"][open] {
+      transform: translateX(100%);
+    }
+
+    .cns-dialog[data-placement="bottom"][open] {
+      transform: translateY(100%);
+    }
+
+    .cns-ai-panel[open] {
+      transform: translateY(1rem);
+    }
   }
 }
 
