@@ -5,11 +5,11 @@ import type { ProductImage } from "@/types/product";
 const PETAL_ANGLES = [0, 72, 144, 216, 288];
 
 /**
- * Arched editorial frame for the hero photograph. Until approved photography
- * exists it shows a decorative botanical line drawing, never stock or
- * AI-generated product imagery.
+ * Arched editorial frame for brand photography (homepage hero, About).
+ * Until approved photography exists it shows a decorative botanical line
+ * drawing, never stock or AI-generated imagery.
  */
-export function HeroMedia({ image }: { image: ProductImage | null }) {
+export function ArchMedia({ image, priority = false }: { image: ProductImage | null; priority?: boolean }) {
   return (
     <div className="relative mx-auto aspect-4/5 w-full max-w-md overflow-hidden rounded-t-pill bg-linear-to-b from-brand-blush-soft to-brand-peach desktop:max-w-lg">
       {image ? (
@@ -17,7 +17,7 @@ export function HeroMedia({ image }: { image: ProductImage | null }) {
           src={image.src}
           alt={image.alt}
           fill
-          priority
+          priority={priority}
           sizes="(min-width: 64rem) 32rem, (min-width: 40rem) 28rem, 100vw"
           className="object-cover"
         />

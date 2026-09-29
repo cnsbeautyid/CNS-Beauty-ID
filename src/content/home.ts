@@ -45,20 +45,11 @@ export const HOME_COPY = {
     quizPrompt: "Lebih suka menjawab beberapa pertanyaan?",
     quizCta: "Ikuti Skin Quiz",
   },
-  founder: {
-    eyebrow: "Cerita Kami",
-    quote:
-      "Karena cantik bukan hanya tentang bagaimana orang lain melihat kita. Cantik adalah tentang bagaimana kita melihat dan menghargai diri kita sendiri.",
-    name: "Wina Ranesa",
-    role: "Founder & Owner CNS Beauty",
-    philosophy:
-      "Merawat diri bukan sekadar tentang bagaimana kita terlihat, tetapi tentang menghargai diri sendiri, membangun kepercayaan diri, dan menciptakan ritual kecil untuk mencintai diri sendiri setiap hari.",
-    cta: "Kenali CNS Beauty",
-  },
+  // Founder copy lives in src/content/brand.ts (shared with the About page).
   testimonials: {
     eyebrow: "Testimoni",
     title: "Cerita dari pelanggan kami",
-    verified: "Pembelian terverifikasi",
+    cta: "Lihat semua testimoni",
   },
   journal: {
     eyebrow: "Artikel",

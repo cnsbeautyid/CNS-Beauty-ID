@@ -1,12 +1,11 @@
 import { ArrowRight } from "lucide-react";
 
 import { AskAIButton } from "@/components/ai/ask-ai-button";
+import { ArchMedia } from "@/components/layout/arch-media";
 import { Container } from "@/components/layout/container";
 import { ButtonLink } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { HOME_COPY } from "@/content/home";
-
-import { HeroMedia } from "./hero-media";
 
 export function Hero() {
   const copy = HOME_COPY.hero;
@@ -44,7 +43,7 @@ export function Hero() {
         </div>
 
         <div className="desktop:col-span-6">
-          <HeroMedia image={copy.image} />
+          <ArchMedia image={copy.image} priority />
         </div>
       </Container>
     </section>
