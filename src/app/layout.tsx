@@ -28,6 +28,8 @@ export const metadata: Metadata = {
   description:
     "CNS Beauty — Your Skin. Your Ritual. Your Confidence. Perawatan kulit untuk ritual kecil mencintai diri sendiri setiap hari.",
   applicationName: "CNS Beauty",
+  openGraph: { siteName: "CNS Beauty", locale: "id_ID", type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { productCategoryPath } from "@/constants/routes";
+import { JsonLd } from "@/components/seo/json-ld";
+import { productCategoryPath, ROUTES } from "@/constants/routes";
 import { CatalogView } from "@/features/catalog/catalog-view";
+import { breadcrumbJsonLd } from "@/lib/seo/structured-data";
 import { getCatalogFacets, getCategoryBySlug, listProducts } from "@/services/catalog/products";
 import { hasActiveFilters, parseCatalogQuery } from "@/services/catalog/query";
 
@@ -27,13 +29,22 @@ export default async function CategoryPage({ params, searchParams }: PageProps<"
   const [listing, facets] = await Promise.all([listProducts(query, { categoryId: category.id }), getCatalogFacets()]);
 
   return (
-    <CatalogView
+    <>
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Beranda", path: ROUTES.home },
+          { name: "Produk", path: ROUTES.products },
+          { name: category.name, path: productCategoryPath(category.slug) },
+        ])}
+      />
+      <CatalogView
       title={category.name}
       basePath={productCategoryPath(category.slug)}
       query={query}
       listing={listing}
       facets={facets}
       activeCategorySlug={category.slug}
-    />
+      />
+    </>
   );
 }

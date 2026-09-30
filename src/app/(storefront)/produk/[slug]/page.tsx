@@ -22,7 +22,7 @@ import {
   UsageSection,
 } from "@/features/product-detail/product-sections";
 import { PurchasePanel, StickyCommerceBar } from "@/features/product-detail/purchase-panel";
-import { clientEnv } from "@/lib/env/client";
+import { breadcrumbJsonLd, productBreadcrumbs, productJsonLd } from "@/lib/seo/structured-data";
 import {
   getActiveProductSlugs,
   getApprovedReviews,
@@ -30,7 +30,6 @@ import {
   getRelatedProducts,
 } from "@/services/catalog/product-detail";
 import { getPublicContact } from "@/services/content/contact";
-import type { ProductDetail } from "@/types/product";
 
 // Price and stock refresh every 5 minutes; checkout re-validates server-side.
 export const revalidate = 300;
@@ -57,50 +56,6 @@ export async function generateMetadata({ params }: PageProps<"/produk/[slug]">):
       description,
       images: product.images.slice(0, 1).map((image) => ({ url: image.src, alt: image.alt })),
     },
-  };
-}
-
-function productJsonLd(product: ProductDetail) {
-  const url = new URL(productPath(product.slug), clientEnv.NEXT_PUBLIC_SITE_URL).toString();
-  return {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    sku: product.sku,
-    // Only factual copy: unapproved marketing descriptions are never emitted.
-    ...(product.shortDescription && { description: product.shortDescription }),
-    ...(product.images.length > 0 && { image: product.images.map((image) => image.src) }),
-    brand: { "@type": "Brand", name: BRAND.name },
-    offers: {
-      "@type": "Offer",
-      url,
-      priceCurrency: "IDR",
-      price: product.price.amount,
-      availability: product.availability === "in_stock" ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-    },
-    ...(product.rating && {
-      aggregateRating: { "@type": "AggregateRating", ratingValue: product.rating.average, reviewCount: product.rating.count },
-    }),
-  };
-}
-
-function breadcrumbJsonLd(product: ProductDetail) {
-  const site = clientEnv.NEXT_PUBLIC_SITE_URL;
-  const items = [
-    { name: "Beranda", path: ROUTES.home },
-    { name: "Produk", path: ROUTES.products },
-    ...(product.category ? [{ name: product.category.name, path: productCategoryPath(product.category.slug) }] : []),
-    { name: product.name, path: productPath(product.slug) },
-  ];
-  return {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: items.map((item, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: item.name,
-      item: new URL(item.path, site).toString(),
-    })),
   };
 }
 
@@ -145,7 +100,7 @@ export default async function ProductDetailPage({ params }: PageProps<"/produk/[
       />
       <TrackEvent name="PRODUCT_VIEWED" productId={product.id} properties={{ slug: product.slug }} />
       <JsonLd data={productJsonLd(product)} />
-      <JsonLd data={breadcrumbJsonLd(product)} />
+      <JsonLd data={breadcrumbJsonLd(productBreadcrumbs(product))} />
 
       <Container className="py-8 desktop:py-12">
         <nav aria-label="Breadcrumb">
