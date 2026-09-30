@@ -2,9 +2,26 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 16)
-- **Current phase:** Phase 16 Analytics, done and validated
-- **Next phase:** Phase 17
+- **Last updated:** 2026-09-30 (Phase 17)
+- **Current phase:** Phase 17 Beauty Concierge full page, done and validated
+- **Next phase:** Phase 18
+
+## Phase 17 summary
+
+Owner decisions (2026-09-30): a full-page chat (not a landing page or guided flow); the conversation survives a reload through `sessionStorage`; a personal-context side rail. Spec: `docs/superpowers/specs/2026-09-30-beauty-concierge-page-design.md`.
+
+- **`/beauty-concierge`** (Server Component, indexable): h1, intro, a "Cara kerja" section, canonical and Open Graph. The site nav link no longer 404s.
+- **One conversation, two surfaces:** `ConciergeConversation` (`src/components/ai/concierge-conversation.tsx`) is the chat body for both the floating panel and the page, on the same `useAIStore`. The launcher is hidden on the page, and an open panel closes.
+- **Persistence:** `persist` keeps `conversationId` and the last 20 messages in `sessionStorage` (`cns-ai-conversation`, v1).
+  - Writes are gated until rehydration, because persist writes on every set, even before hydrating.
+  - Restored data is Zod-validated (https-only handoff links, UUID id), and a reply cut off by the reload comes back as "Jawaban dihentikan."
+  - Sign-out clears it.
+- **Side rail** (`src/features/beauty-concierge/`): the skin profile, routine step counts and CNS Rewards points, read through RLS with the existing services, behind `<Suspense>`.
+  - Signed-out and no-profile visitors get the Skin Quiz CTA. A failed profile read shows the no-profile view.
+  - The rail only displays data; the AI reads the same data through its own tools.
+  - The decisions live in the pure `buildRailModel`, which is unit-tested.
+- **AI context:** new page type `"concierge"` (a hint, never authorization). `AI_OPENED { source: "page" }` fires on the page.
+- **Not covered by E2E:** the signed-in rail (the suite never signs in; see Phase 20).
 
 ## Phase 16 summary
 
@@ -766,3 +783,4 @@ Follow master prompt §26, with these gates:
 | 14 | pass | pass | 161/161 (incl. reseller model, application action, partner AI tools) | pass | 207 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-out paths + axe on `/reseller`; partner RLS verified on the live DB |
 | 15 | pass | pass | 182/182 (incl. admin model, admin action authorization/audit integration) | pass | 231 pass, 13 skipped; 4 failed on `ConnectTimeoutError` / slow responses from the live Supabase during the run (cart/catalog specs untouched by Phase 15; they passed in the previous run and in isolation). All 28 new admin E2E pass (14 tests × 2 devices) |
 | 16 | pass | pass | 209/209 (incl. analytics model/contract, ingest route, server recorder, event emitters in checkout/quiz/reorder) | pass | 251 pass, 13 skipped, 0 failed (incl. 14 new analytics E2E + privacy page a11y) |
+| 17 | pass | pass | 231/231 (incl. conversation persistence + hydration gate, rail model, concierge page type) | pass | 265 pass, 15 skipped, 0 failed (incl. 14 new concierge-page E2E: inline stream, reload/panel continuity, rail chips, mobile/desktop layout, no-JS content, axe) |
