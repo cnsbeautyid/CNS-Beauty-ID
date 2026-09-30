@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { Container } from "@/components/layout/container";
 import { BRAND } from "@/config/site";
+import { ANALYTICS_RETENTION_DAYS } from "@/constants/analytics";
 import { ROUTES } from "@/constants/routes";
 import { getPublicContact } from "@/services/content/contact";
 
@@ -62,6 +63,9 @@ export default async function PrivacyPage() {
               <li>menyimpan alamat halaman tanpa parameter dan tanpa nomor pesanan, serta hanya nama domain situs asal kunjungan;</li>
               <li>
                 tidak berjalan sama sekali bila browsermu mengirim sinyal <span lang="en">Do Not Track</span> atau <span lang="en">Global Privacy Control</span>.
+              </li>
+              <li>
+                Data kejadian mentah disimpan paling lama {ANALYTICS_RETENTION_DAYS} hari. Setelah itu kami hanya menyimpan jumlah harian tanpa ID apa pun.
               </li>
             </ul>
             <p>Bila kamu masuk ke akun, kejadian tersebut juga dikaitkan dengan akunmu agar kami bisa melayani pesanan dan poin dengan benar.</p>
