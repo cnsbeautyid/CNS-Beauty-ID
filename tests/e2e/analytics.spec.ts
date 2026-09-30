@@ -86,7 +86,7 @@ test.describe("Analytics", () => {
     await page.getByRole("contentinfo").getByRole("link", { name: "Kebijakan Privasi" }).click();
     await expect(page).toHaveURL(/\/kebijakan-privasi$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Kebijakan Privasi");
-    await expect(page.getByText("Data kejadian mentah disimpan paling lama 180 hari")).toBeVisible();
+    await expect(page.getByText("Data kejadian mentah dihapus otomatis setelah 180 hari")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Analytics" })).toBeVisible();
     await expect(page.getByText("Global Privacy Control").first()).toBeVisible();
   });

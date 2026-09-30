@@ -65,7 +65,7 @@ export default async function PrivacyPage() {
                 tidak berjalan sama sekali bila browsermu mengirim sinyal <span lang="en">Do Not Track</span> atau <span lang="en">Global Privacy Control</span>.
               </li>
               <li>
-                Data kejadian mentah disimpan paling lama {ANALYTICS_RETENTION_DAYS} hari. Setelah itu kami hanya menyimpan jumlah harian tanpa ID apa pun.
+                Data kejadian mentah dihapus otomatis setelah {ANALYTICS_RETENTION_DAYS} hari. Setelah itu kami hanya menyimpan jumlah harian tanpa ID apa pun.
               </li>
             </ul>
             <p>Bila kamu masuk ke akun, kejadian tersebut juga dikaitkan dengan akunmu agar kami bisa melayani pesanan dan poin dengan benar.</p>

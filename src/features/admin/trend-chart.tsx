@@ -11,6 +11,8 @@ const number = (value: number) => value.toLocaleString("id-ID");
 const percent = (value: number | null) => (value === null ? "—" : `${(value * 100).toLocaleString("id-ID", { maximumFractionDigits: 1 })}%`);
 const monthLabel = (month: string) =>
   new Date(`${month}-01T00:00:00Z`).toLocaleDateString("id-ID", { month: "short", year: "numeric", timeZone: "UTC" });
+const updatedLabel = (iso: string) =>
+  new Date(iso).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }) + " WIB";
 const dayLabel = (day: string) => new Date(`${day}T00:00:00Z`).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "UTC" });
 
 const COLUMNS = [
@@ -59,7 +61,7 @@ function TrendChart({ trend, months }: { trend: Trend; months: TrendRange }) {
 export async function TrendSection({ months, errorHref }: { months: TrendRange; errorHref: string }) {
   const result = await getAnalyticsTrend(months);
   if (result.status === "error") return <InsightError href={errorHref} />;
-  const { trend } = result;
+  const { trend, lastUpdated } = result;
   const empty = trend.months.every((month) => Object.keys(month.events).length === 0);
 
   return (
@@ -102,6 +104,13 @@ export async function TrendSection({ months, errorHref }: { months: TrendRange; 
       )}
       <p className="text-caption text-text-secondary">
         Pengunjung dihitung per hari lalu dijumlah; satu orang yang datang 3 hari terhitung 3. Data sampai kemarin.
+        {lastUpdated && (
+          <>
+            {" "}
+            Ringkasan terakhir diperbarui {updatedLabel(lastUpdated)}; bila tanggal ini tertinggal lebih dari 2 hari, periksa cron{" "}
+            <code>analytics-retention</code>.
+          </>
+        )}
       </p>
     </div>
   );

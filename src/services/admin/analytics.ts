@@ -3,7 +3,7 @@ import "server-only";
 import { AI_FUNNEL, PRIMARY_FUNNEL, SKIN_QUIZ_FUNNEL, type AnalyticsEventName } from "@/constants/analytics";
 import { createClient } from "@/lib/supabase/server";
 import { buildFunnel, topValues, type FunnelStep, type ReportWindow } from "@/services/analytics/model";
-import { buildTrend, trendRange, wibToday, type Trend, type TrendRange } from "@/services/analytics/trend";
+import { buildTrend, trendRange, wibToday, type DailyTotal, type Trend, type TrendRange } from "@/services/analytics/trend";
 
 // Analytics reports for staff. Aggregates run in SQL (analytics_funnel,
 // analytics_event_counts: SECURITY INVOKER, so staff RLS applies); only the
@@ -70,19 +70,40 @@ export async function getConversionRate(days: number): Promise<number | null | u
   return visits && visits.visitors > 0 ? (orders?.visitors ?? 0) / visits.visitors : null;
 }
 
-/** Long-term trend from anonymous daily totals (staff RLS). Up to yesterday, WIB. */
-export async function getAnalyticsTrend(months: TrendRange): Promise<{ status: "ok"; trend: Trend } | { status: "error" }> {
+// PostgREST returns at most 1000 rows per request (supabase/config.toml
+// max_rows), so the daily totals are read page by page.
+const TREND_PAGE_SIZE = 1000;
+
+/**
+ * Long-term trend from anonymous daily totals (staff RLS). Up to yesterday, WIB.
+ * `lastUpdated` is when the nightly job last wrote totals, so staff can see if
+ * it has stopped running.
+ */
+export async function getAnalyticsTrend(
+  months: TrendRange,
+): Promise<{ status: "ok"; trend: Trend; lastUpdated: string | null } | { status: "error" }> {
   const db = await createClient();
   const range = trendRange(wibToday(), months);
-  const { data, error } = await db
-    .from("analytics_daily_events")
-    .select("day, event_name, events, visitors")
-    .gte("day", range.from)
-    .lte("day", range.to)
-    .limit(20_000);
-  if (error) {
-    console.error("[admin] analytics trend failed", error);
-    return { status: "error" };
+  const rows: DailyTotal[] = [];
+  let lastUpdated: string | null = null;
+  for (let from = 0; ; from += TREND_PAGE_SIZE) {
+    const { data, error } = await db
+      .from("analytics_daily_events")
+      .select("day, event_name, events, visitors, updated_at")
+      .gte("day", range.from)
+      .lte("day", range.to)
+      .order("day")
+      .order("event_name")
+      .range(from, from + TREND_PAGE_SIZE - 1);
+    if (error) {
+      console.error("[admin] analytics trend failed", error);
+      return { status: "error" };
+    }
+    for (const row of data ?? []) {
+      rows.push(row);
+      if (!lastUpdated || row.updated_at > lastUpdated) lastUpdated = row.updated_at;
+    }
+    if ((data ?? []).length < TREND_PAGE_SIZE) break;
   }
-  return { status: "ok", trend: buildTrend(data ?? [], range) };
+  return { status: "ok", trend: buildTrend(rows, range), lastUpdated };
 }
