@@ -84,7 +84,7 @@ It reuses the existing catalog services wherever one already returns this data. 
 - **`src/app/opengraph-image.tsx`:**
   - It is 1200×630 PNG (`size`, `contentType`, `alt: "CNS Beauty — Your Skin. Your Ritual. Your Confidence."`), built with `ImageResponse`.
   - Contents: a cream background (`#F5F1EC`), the CNS logo mark read from `public/brand/cns-logo-mark.png`, "CNS Beauty" and the tagline in Cormorant Garamond (`#1F1F1F`), and a thin `#8C7A64` rule.
-  - The font file, Cormorant Garamond SemiBold (OFL), is committed at `src/assets/fonts/CormorantGaramond-SemiBold.ttf` and read with `fs` at build time. There is no network fetch at build. The file is downloaded once from the official `google/fonts` repository (`ofl/cormorantgaramond`), with its `OFL.txt` committed beside it.
+  - The font file, Cormorant Garamond SemiBold (OFL), is committed at `src/assets/fonts/CormorantGaramond-SemiBold.ttf` and read with `fs` at build time. There is no network fetch at build. The file is Fontsource's static 600 cut (77 kB). The `google/fonts` repository ships only the variable font, which `ImageResponse` doesn't render reliably. The `OFL.txt` from `google/fonts` is committed beside it.
   - It is generated at build time (static).
   - Pages that set their own `openGraph.images` (products) keep theirs.
 
@@ -94,7 +94,7 @@ Pure builders live in `src/lib/seo/structured-data.ts` (unit-tested), and are re
 
 - **`organizationJsonLd(contact)`**, on the home page only:
   - `@type: Organization`, with `name`, `url`, and `logo` (the absolute URL of the logo mark);
-  - `sameAs`: the Instagram URL when configured;
+  - `sameAs`: only verified brand profiles from `SOCIAL_LINKS` in `src/config/site.ts`, which is empty today. The `settings.contact` Instagram handle (`ranesaaaaaaa`) may be a personal account, so it appears on `/kontak` as contact info but is never declared an official profile;
   - `contactPoint` (`contactType: "customer service"`, `availableLanguage: "id"`, `telephone` from the WhatsApp number as `+62…`, `email`), with only the configured fields.
 - **`websiteJsonLd()`**, on the home page only: `@type: WebSite` with a `potentialAction` `SearchAction` that targets `${site}/produk?q={search_term_string}`.
   - **Check first:** the catalog search parameter must actually be `q`. If `parseCatalogQuery` uses a different name, the builder uses that name.
