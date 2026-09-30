@@ -44,7 +44,7 @@ export default async function ContactPage() {
                 <li>
                   <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className={buttonClassName({ variant: "primary", size: "lg" })}>
                     <MessageCircle aria-hidden className="size-5" />
-                    WhatsApp {contact.whatsapp_display ?? `+${contact.whatsapp}`}
+                    WhatsApp <span className="whitespace-nowrap">{contact.whatsapp_display ?? `+${contact.whatsapp}`}</span>
                     <span className="sr-only">(membuka WhatsApp)</span>
                   </a>
                 </li>
