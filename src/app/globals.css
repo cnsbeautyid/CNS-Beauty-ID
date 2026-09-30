@@ -116,6 +116,8 @@
   /* Floating elements clear the iOS home indicator. */
   --safe-bottom: max(0.75rem, env(safe-area-inset-bottom));
   --fab-bottom: calc(1rem + env(safe-area-inset-bottom));
+  /* Sticky header height (h-16 / desktop:h-20) plus a small gap. */
+  --header-offset: 4.5rem;
   --ai-panel-width: min(26rem, calc(100vw - 3rem));
   --ai-panel-height: min(40rem, calc(100dvh - 3rem));
   --ai-page-chat-height: min(48rem, calc(100dvh - 8rem));
@@ -126,6 +128,7 @@
 @media (min-width: 64rem) {
   :root {
     --section-y: 6rem;
+    --header-offset: 5.5rem;
   }
 }
 
@@ -133,6 +136,7 @@
 @media (max-width: 63.99rem) {
   :root:has([data-sticky-commerce]) {
     --fab-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    scroll-padding-bottom: 6rem;
   }
 }
 
@@ -179,6 +183,16 @@
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  /* Keep focused/anchored content clear of the sticky header (WCAG 2.4.11). */
+  html {
+    scroll-padding-top: var(--header-offset);
+  }
+
+  /* The skip link focuses <main>; the whole region needs no ring. */
+  #main-content:focus {
+    outline: none;
   }
 }
 

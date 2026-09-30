@@ -5,6 +5,7 @@ import { clientEnv } from "@/lib/env/client";
 
 import "./globals.css";
 import { SHARE_DEFAULTS } from "@/lib/seo/share";
+import { SkipLink } from "@/components/layout/skip-link";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -44,12 +45,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="id" className={`${cormorant.variable} ${inter.variable}`}>
       <body className="flex min-h-dvh flex-col">
-        <a
-          href="#main-content"
-          className="sr-only rounded-md bg-primary px-4 py-2 text-body-s text-on-primary focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50"
-        >
-          Langsung ke konten utama
-        </a>
+        <SkipLink />
         {children}
       </body>
     </html>
