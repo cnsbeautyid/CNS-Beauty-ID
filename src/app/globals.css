@@ -118,6 +118,7 @@
   --fab-bottom: calc(1rem + env(safe-area-inset-bottom));
   --ai-panel-width: min(26rem, calc(100vw - 3rem));
   --ai-panel-height: min(40rem, calc(100dvh - 3rem));
+  --ai-page-chat-height: min(48rem, calc(100dvh - 8rem));
 }
 
 @media (min-width: 64rem) {
