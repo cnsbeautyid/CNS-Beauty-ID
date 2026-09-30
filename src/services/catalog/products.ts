@@ -195,3 +195,29 @@ export async function getCategoryBySlug(slug: string) {
   const facets = await getCatalogFacets();
   return facets?.categories.find((category) => category.slug === slug) ?? null;
 }
+
+const SITEMAP_PAGE_SIZE = 1000;
+
+/** Active products for sitemap.xml, paged past the API row cap. Null on failure. */
+export async function listSitemapProducts(): Promise<{ slug: string; updatedAt: string; image?: string }[] | null> {
+  const db = createPublicClient();
+  if (!db) return null;
+  const products: { slug: string; updatedAt: string; image?: string }[] = [];
+  for (let from = 0; ; from += SITEMAP_PAGE_SIZE) {
+    const { data, error } = await db
+      .from("products")
+      .select("slug, updated_at, thumbnail_url")
+      .eq("status", "active")
+      .order("slug")
+      .range(from, from + SITEMAP_PAGE_SIZE - 1);
+    if (error) {
+      console.error("[catalog] listSitemapProducts failed", error);
+      return null;
+    }
+    for (const row of data ?? []) {
+      const image = resolveImageUrl(row.thumbnail_url, supabaseUrl);
+      products.push({ slug: row.slug, updatedAt: row.updated_at, ...(image && { image }) });
+    }
+    if ((data ?? []).length < SITEMAP_PAGE_SIZE) return products;
+  }
+}
