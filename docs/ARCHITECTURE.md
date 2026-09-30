@@ -19,12 +19,12 @@ Owner decision (2026-10-01): fix the confirmed WCAG 2.2 AA failures and add perm
     - The catalog Filter and sort controls wrap.
     - The `/kontak` WhatsApp number stays on one line.
     - Before, `/`, the product page, `/kontak`, `/produk` and category pages all scrolled sideways.
-  - **Focus not obscured (2.4.11):** `scroll-padding-top` (the `--header-offset` token) and, on mobile product pages, `scroll-padding-bottom` for the Add-to-Cart bar. In Chromium the header already never hid focus (forward and backward tabbing checked), so this is a cross-browser guard. Firefox and Safari weren't verified.
+  - **Focus not obscured (2.4.11):** `scroll-padding-top` (the `--header-offset` token) and, on mobile product pages, `scroll-padding-bottom` for the Add-to-Cart bar. Without it, tabbing on `/produk` hid the sort control, product cards and filter inputs under the sticky header, on desktop and mobile (proven by the guard with scroll padding disabled).
 - **Checked and fine:** sign-in errors (`aria-invalid`, `aria-describedby`, focus to the first invalid field), product-card focus rings, reduced motion, target size.
 - **Guards** (`tests/e2e/a11y.spec.ts`, desktop and mobile):
   - an axe sweep of every public page and both open overlays;
   - skip-link focus;
-  - focus below the sticky header on a product page and the listing;
+  - every Tab stop in `<main>`, forward and backward, clear of the sticky header and the mobile Add-to-Cart bar, on a product page and the listing;
   - no horizontal scroll at 320px on every public page.
 
   Navigation settles (network idle, no `loading.tsx` skeleton) before each check, because `/checkout` redirects and the streamed pages swap a skeleton `<main>`.
@@ -872,4 +872,4 @@ Follow master prompt §26, with these gates:
 | 18 | pass | pass | 268/268 (incl. trend model, cron auth, retention cron route integration) | pass | 262 pass, 16 skipped; 4 `layout.spec` design-preview specs failed only because the manually started server lacked `ENABLE_DESIGN_PREVIEW=true` (Playwright's own webServer sets it); rerun with it: `layout.spec` 27 pass. Incl. privacy-page retention sentence + axe. SQL verified on live in rolled-back transactions (6 checks + RLS) |
 | 19 | pass | pass | 287/287 (incl. robots/sitemap/JSON-LD builders, sitemap + FAQ readers) | pass | 281 pass, 16 skipped; 3 failed on test expectations (header spec still listed Artikel; home canonical is the bare origin), both fixed → `seo.spec` + `layout.spec` 45 pass. Screenshots: `/faq`, `/kontak`, share card |
 | 20 | pass | pass | 301/301 (incl. env-public guards, scheduleAfterLoadIdle, unchanged protocol/persistence/env tests) | pass | 298 pass, 16 skipped, 0 failed (incl. 12 performance-budget E2E). Lighthouse before/after in the Phase 20 summary |
-| 21 | pass | pass | 302/302 | pass | 344 pass, 16 skipped, 0 failed (incl. 76 a11y guards: axe sweep, skip link, focus not obscured, reflow at 320px) |
+| 21 | pass | pass | 305/305 (incl. skeleton-id guard) | pass | 356 pass, 16 skipped, 0 failed (incl. the a11y guards: axe sweep with 404/design-system/empty search, skip link, every-Tab-stop focus vs sticky bars, reflow at 320px) |
