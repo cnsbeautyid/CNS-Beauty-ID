@@ -49,5 +49,14 @@ npm run dev
 | `npm run test:e2e` | Playwright on a production build (desktop + mobile) |
 | `npm run validate` | lint + typecheck + test + build — the phase gate |
 
+### CI
+
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main`:
+
+- **checks**: `npm ci`, lint, typecheck, unit/integration tests, production build.
+- **e2e**: Playwright (desktop + mobile), after `checks` passes. It runs against the live Supabase catalog, so it is skipped until these **repository variables** exist (Settings → Secrets and variables → Actions → Variables): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and, optionally, `NEXT_PUBLIC_SITE_URL`. Both are public client values. Never add the service role key, LLM keys or payment secrets to CI.
+
+On failure, Playwright traces are uploaded as the `playwright-results` artifact.
+
 Status, decisions, gap analysis and open prerequisites: `docs/ARCHITECTURE.md`.
 Token usage and contrast rules: `docs/DESIGN_TOKENS.md`.
