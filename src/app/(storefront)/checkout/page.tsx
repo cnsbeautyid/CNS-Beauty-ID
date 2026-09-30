@@ -12,7 +12,7 @@ import { CheckoutForm } from "@/features/checkout/checkout-form";
 import { OrderSummary } from "@/features/checkout/order-summary";
 import { getSessionUser } from "@/lib/auth/session";
 import { formatIDR } from "@/lib/utils/format";
-import { readCart } from "@/services/cart/cookie";
+import { CartStoreError, readCart } from "@/services/cart/store";
 import { quoteCart } from "@/services/cart/quote";
 import { quoteErrorMessage } from "@/services/cart/quote-schema";
 import { getCheckoutPrefill } from "@/services/checkout/addresses";
@@ -48,7 +48,17 @@ export default async function CheckoutPage() {
   // Login is required (owner decision, Phase 7). Re-checked in the action.
   if (!user) redirect(`${ROUTES.signIn}?next=${encodeURIComponent(ROUTES.checkout)}`);
 
-  const cart = await readCart();
+  let cart;
+  try {
+    cart = await readCart();
+  } catch (error) {
+    if (!(error instanceof CartStoreError)) throw error;
+    return (
+      <Shell email={user.email}>
+        <ErrorState description="Keranjang belum dapat dimuat. Silakan coba lagi dalam beberapa saat." action={<BackToCart />} />
+      </Shell>
+    );
+  }
   if (cart.items.length === 0) {
     return (
       <Shell email={user.email}>

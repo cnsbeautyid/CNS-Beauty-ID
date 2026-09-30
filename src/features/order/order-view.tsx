@@ -11,6 +11,7 @@ import type { OwnOrder } from "@/services/order/order";
 import { orderStatusInfo } from "@/services/order/status";
 
 import { ProofUpload } from "./proof-upload";
+import { ReorderButton } from "./reorder-button";
 
 type OrderViewProps = {
   order: OwnOrder;
@@ -37,8 +38,8 @@ export function OrderView({ order, userId, payment, deadline, whatsapp }: OrderV
   const awaitingPayment = order.status === "pending_payment";
 
   return (
-    <div className="grid gap-10 desktop:grid-cols-3">
-      <div className="desktop:col-span-2">
+    <div className="grid gap-10 wide:grid-cols-3">
+      <div className="wide:col-span-2">
         <div className="flex flex-wrap items-center gap-3">
           <Badge tone={status.tone}>{status.label}</Badge>
           <p className="text-body-s text-text-secondary">Dibuat {formatDateTime(order.createdAt)}</p>
@@ -149,7 +150,7 @@ export function OrderView({ order, userId, payment, deadline, whatsapp }: OrderV
         </Section>
       </div>
 
-      <aside aria-labelledby="order-total-title" className="h-fit rounded-lg bg-surface p-6 desktop:sticky desktop:top-28">
+      <aside aria-labelledby="order-total-title" className="h-fit rounded-lg bg-surface p-6 wide:sticky wide:top-28">
         <h2 id="order-total-title" className="text-h4">
           Rincian Pembayaran
         </h2>
@@ -173,9 +174,12 @@ export function OrderView({ order, userId, payment, deadline, whatsapp }: OrderV
             <dd>{formatIDR(order.total)}</dd>
           </div>
         </dl>
-        <ButtonLink href={ROUTES.products} variant="secondary" fullWidth className="mt-6">
-          Lanjut belanja
-        </ButtonLink>
+        <div className="mt-6 flex flex-col gap-3">
+          {order.items.length > 0 && <ReorderButton orderId={order.id} />}
+          <ButtonLink href={ROUTES.products} variant="secondary" fullWidth>
+            Lanjut belanja
+          </ButtonLink>
+        </div>
       </aside>
     </div>
   );

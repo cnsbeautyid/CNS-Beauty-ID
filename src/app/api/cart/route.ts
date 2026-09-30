@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 
-import { readCart } from "@/services/cart/cookie";
+import { CartStoreError, readCart } from "@/services/cart/store";
 import { itemCount } from "@/services/cart/model";
 
 /** Cart badge summary for client components (TanStack Query). No prices. */
 export async function GET() {
-  const cart = await readCart();
-  return NextResponse.json({ count: itemCount(cart) }, { headers: { "Cache-Control": "no-store" } });
+  const headers = { "Cache-Control": "no-store" };
+  try {
+    return NextResponse.json({ count: itemCount(await readCart()) }, { headers });
+  } catch (error) {
+    if (!(error instanceof CartStoreError)) throw error;
+    return NextResponse.json({ error: "cart_unavailable" }, { status: 503, headers });
+  }
 }

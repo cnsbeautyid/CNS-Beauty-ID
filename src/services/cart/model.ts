@@ -96,3 +96,56 @@ export function setCoupon(cart: CartState, code: string | undefined): CartState 
 export function itemCount(cart: CartState): number {
   return cart.items.reduce((total, line) => total + line.q, 0);
 }
+
+// ---- Database carts (signed-in users) ------------------------------------
+
+export type CartRow = { id: string; product_id: string; variant_id: string | null; quantity: number };
+
+const clampQuantity = (quantity: number) => Math.max(1, Math.min(MAX_QUANTITY, Math.trunc(quantity)));
+
+/** carts/cart_items rows → CartState, merging duplicate lines and capping like the cookie cart. */
+export function cartFromRows(rows: readonly Omit<CartRow, "id">[], couponCode: string | null): CartState {
+  const cart = rows.reduce<CartState>((current, row) => {
+    const change = addItem(current, row.product_id, row.variant_id ?? undefined, clampQuantity(row.quantity));
+    return "cart" in change ? change.cart : current;
+  }, EMPTY_CART);
+  const coupon = couponCodeSchema.safeParse(couponCode ?? "");
+  return cart.items.length > 0 && coupon.success ? setCoupon(cart, coupon.data) : cart;
+}
+
+/** Guest cart merged into the account cart at sign-in. A guest coupon wins. */
+export function mergeCarts(account: CartState, guest: CartState): CartState {
+  const items = guest.items.reduce<CartState>((current, line) => {
+    const change = addItem(current, line.p, line.v, line.q);
+    return "cart" in change ? change.cart : current;
+  }, account);
+  return setCoupon(items, guest.coupon ?? account.coupon);
+}
+
+export type CartRowDiff = {
+  deleteIds: string[];
+  updates: { id: string; quantity: number }[];
+  inserts: { product_id: string; variant_id: string | null; quantity: number }[];
+};
+
+/** Minimal row changes that turn the stored cart_items into `desired`. */
+export function diffCartRows(existing: readonly CartRow[], desired: CartState): CartRowDiff {
+  const wanted = new Map(desired.items.map((line) => [lineKey(line), line]));
+  const kept = new Set<string>();
+  const diff: CartRowDiff = { deleteIds: [], updates: [], inserts: [] };
+
+  for (const row of existing) {
+    const key = lineKey({ p: row.product_id, v: row.variant_id ?? undefined });
+    const line = wanted.get(key);
+    if (!line || kept.has(key)) {
+      diff.deleteIds.push(row.id);
+      continue;
+    }
+    kept.add(key);
+    if (row.quantity !== line.q) diff.updates.push({ id: row.id, quantity: line.q });
+  }
+  for (const [key, line] of wanted) {
+    if (!kept.has(key)) diff.inserts.push({ product_id: line.p, variant_id: line.v ?? null, quantity: line.q });
+  }
+  return diff;
+}

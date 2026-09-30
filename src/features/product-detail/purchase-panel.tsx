@@ -3,6 +3,7 @@ import { CircleAlert, CircleCheck, MessageCircle } from "lucide-react";
 import { AskAIButton } from "@/components/ai/ask-ai-button";
 import { Price } from "@/components/product/price";
 import { AddToCartButton } from "@/features/cart/add-to-cart-button";
+import { WishlistButton } from "@/features/wishlist/wishlist-button";
 import { whatsappUrl } from "@/lib/utils/whatsapp";
 import type { ProductDetail } from "@/types/product";
 
@@ -53,6 +54,7 @@ export function PurchasePanel({ product, whatsapp }: PurchasePanelProps) {
             <span className="sr-only">(membuka WhatsApp)</span>
           </a>
         )}
+        <WishlistButton productId={product.id} productName={product.name} />
         <AskAIButton fullWidth prefill={`Apakah ${product.name} cocok untuk kulit saya?`}>
           Tanya Beauty AI tentang produk ini
         </AskAIButton>

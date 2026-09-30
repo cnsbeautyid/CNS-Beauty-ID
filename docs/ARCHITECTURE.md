@@ -2,9 +2,35 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 7)
-- **Current phase:** Phase 7 Checkout, done and validated
-- **Next phase:** Phase 8 Customer Account (orders list, DB cart after login, profile)
+- **Last updated:** 2026-09-30 (Phase 8)
+- **Current phase:** Phase 8 Customer Account, done and validated
+- **Next phase:** Phase 9 AI Beauty Concierge (streaming chat, controlled tools)
+
+## Phase 8 summary
+
+- **Account area `/account`** (noindex). The layout holds the account nav and sign-out.
+  - Every page calls `requireUser(next)`; signed-out visitors go to `/masuk?next=…`.
+  - RLS authorizes every query; no user id is ever taken from the request.
+- **Pages:**
+  - **Ringkasan:** recent orders, the CNS Rewards balance read from `loyalty_accounts` (no row means 0 points), the wishlist count, and a Beauty AI entry.
+  - **Pesanan:** paginated list, `?halaman=`.
+  - **Order detail:** now inside the layout, with **"Pesan lagi"**.
+  - **Wishlist.**
+  - **Pengaturan:** profile form (RHF + Zod) and address book (add, delete, set default; at most 10 addresses).
+  - Loyalty, Skin Profile and Routine are not linked until their phases.
+- **Reorder** (`reorderAction`): puts the still-active products of the user's own order back in the cart. Current prices come from the quote, not the old order.
+- **Wishlist:** a heart on the product page. Guests are sent to sign in, and the product page stays ISR because its state comes from `GET /api/wishlist` (private, no-store) through TanStack Query.
+- **Profile:** updates only the columns `authenticated` holds UPDATE grants for (name, phone, WhatsApp, birth date, opt-ins); the email is read-only.
+- **DB cart after login** (`src/services/cart/store.ts`, same `readCart`/`writeCart` API as before):
+  - **Guests:** the httpOnly cookie, as before.
+  - **Signed-in users:** `carts`/`cart_items` under RLS (`carts.user_id` is unique), so the cart works across devices and the WhatsApp context (`whatsapp_contact_context`) can see it.
+  - **Writes** apply minimal row diffs (`diffCartRows`); new rows get `added_from = 'web'`.
+  - **Read failures** throw `CartStoreError`, and pages show an error state. A failed read is never shown as an empty cart, and a write never works from a guessed empty cart.
+  - **At sign-in, sign-up with a session, or the email callback**, `mergeGuestCart` adds the guest cookie cart to the account cart (the guest coupon wins) and clears the cookie. A failure keeps the guest cart and never blocks sign-in.
+- **No migration:** the existing tables, RLS and column grants were enough. Verified on the live DB inside transactions that were rolled back:
+  - A customer can't create or see another customer's cart, add items to it, write wishlists or addresses for others, or edit their own email.
+  - Profile updates reach only the customer's own row.
+- **Risk to watch:** `carts.recovery_sent_at` suggests an abandoned-cart flow outside this DB (e.g. WhatsApp). Signed-in web carts now appear in `carts`; confirm that the flow's messaging is intended before launch.
 
 ## Phase 7 summary
 
@@ -448,3 +474,4 @@ Follow master prompt §26, with these gates:
 | 5 | pass | pass | 43/43 | pass | 118 pass, 10 skipped (device-specific) |
 | 6 | pass | pass | 58/58 | pass | 132 pass, 12 skipped (device-specific; coupon test waits for the service-role key). Includes axe on `/cart` (empty and with a line) |
 | 7 | pass | pass | 75/75 (incl. checkout action integration tests) | pass | 152 pass, 12 skipped (device-specific; coupon test waits for the service-role key). Signed-out/validation paths only; no accounts are created on live Auth |
+| 8 | pass | pass | 89/89 (incl. cart-store and reorder integration tests) | pass | 169 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-out paths only |

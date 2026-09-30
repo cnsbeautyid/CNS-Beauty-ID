@@ -6,6 +6,7 @@ import { ROUTES } from "@/constants/routes";
 import { clientEnv, getSupabasePublicConfig } from "@/lib/env/client";
 import { createClient } from "@/lib/supabase/server";
 import { authErrorMessage } from "@/services/auth/errors";
+import { mergeGuestCart } from "@/services/cart/store";
 import { safeNextPath, signInSchema, signUpSchema, type SignInValues, type SignUpValues } from "@/services/auth/schemas";
 
 export type AuthFormResult = { status: "error"; message: string } | { status: "check_email"; email: string };
@@ -18,8 +19,9 @@ export async function signInAction(values: SignInValues, next: string): Promise<
   if (!getSupabasePublicConfig()) return UNAVAILABLE;
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { status: "error", message: authErrorMessage(error.code) };
+  await mergeGuestCart(supabase, data.user.id);
 
   redirect(safeNextPath(next, ROUTES.home));
 }
@@ -43,7 +45,10 @@ export async function signUpAction(values: SignUpValues, next: string): Promise<
   // An already-registered email gets the same "check your email" answer, so
   // the form can't be used to discover who has an account.
   if (error && error.code !== "user_already_exists") return { status: "error", message: authErrorMessage(error.code) };
-  if (data.session) redirect(target);
+  if (data.session && data.user) {
+    await mergeGuestCart(supabase, data.user.id);
+    redirect(target);
+  }
 
   return { status: "check_email", email: parsed.data.email };
 }
