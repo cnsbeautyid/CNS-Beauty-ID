@@ -1,19 +1,12 @@
-import { timingSafeEqual } from "node:crypto";
-
 import { NextResponse, type NextRequest } from "next/server";
 
+import { authorized } from "@/lib/auth/cron";
 import { getServerEnv } from "@/lib/env/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPaymentSettings } from "@/services/checkout/payment";
 import { PAYMENT_PROOF_BUCKET } from "@/services/order/order";
 
 export const dynamic = "force-dynamic";
-
-function authorized(header: string | null, secret: string): boolean {
-  const expected = Buffer.from(`Bearer ${secret}`);
-  const actual = Buffer.from(header ?? "");
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
-}
 
 /**
  * Vercel Cron: expires unpaid web orders past the payment window through
