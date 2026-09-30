@@ -12,13 +12,16 @@ import type { ConciergeMessage } from "./ai-store";
 export const AI_CONVERSATION_STORAGE_KEY = "cns-ai-conversation";
 export const STOPPED_REPLY = "Jawaban dihentikan.";
 
+// Replies can gather cards over several tool rounds; storage keeps the first ones.
+const MAX_STORED_PRODUCTS = 24;
+
 export type PersistedConversation = { conversationId: string | null; messages: ConciergeMessage[] };
 
 const messageSchema = z.object({
   id: z.string().max(64),
   role: z.enum(["user", "assistant"]),
   content: z.string().max(20_000),
-  products: z.array(productCardSchema).max(12),
+  products: z.array(productCardSchema).max(MAX_STORED_PRODUCTS),
   // Rendered as a link: only https, so a tampered value can't become javascript:.
   handoffUrl: z.string().regex(/^https:\/\//).nullable().optional(),
   state: z.enum(["streaming", "done", "error", "unavailable"]),
@@ -30,7 +33,10 @@ const persistedSchema = z.object({
 });
 
 export function toPersisted(state: PersistedConversation): PersistedConversation {
-  return { conversationId: state.conversationId, messages: state.messages.slice(-MAX_HISTORY) };
+  return {
+    conversationId: state.conversationId,
+    messages: state.messages.slice(-MAX_HISTORY).map((message) => ({ ...message, products: message.products.slice(0, MAX_STORED_PRODUCTS) })),
+  };
 }
 
 /** Validated stored conversation, or null when it is missing or invalid. */

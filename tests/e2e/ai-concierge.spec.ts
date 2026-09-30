@@ -243,6 +243,14 @@ test.describe("Beauty Concierge page", () => {
     expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);
   });
 
+  test("the header Beauty AI button uses the inline chat instead of opening a second one", async ({ page, isMobile }) => {
+    test.skip(isMobile, "Header button is desktop-only");
+    await page.goto("/beauty-concierge");
+    await page.getByRole("banner").getByRole("button", { name: "Beauty AI" }).click();
+    await expect(page.getByRole("dialog", { name: "CNS Beauty AI" })).toBeHidden();
+    await expect(page.getByRole("region", { name: "CNS Beauty AI" }).getByRole("textbox")).toBeFocused();
+  });
+
   test("desktop: rail beside the chat", async ({ page, isMobile }) => {
     test.skip(isMobile, "Desktop layout");
     await page.goto("/beauty-concierge");

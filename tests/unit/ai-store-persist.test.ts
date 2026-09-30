@@ -44,10 +44,25 @@ describe("toPersisted", () => {
   });
 });
 
+describe("toPersisted product cap", () => {
+  it("stores at most 24 cards per message, so a restore never fails on size", () => {
+    const products = Array.from({ length: 30 }, (_, index) => ({ slug: `produk-${index}`, name: `Produk ${index}`, price: 100000, available: true }));
+    const persisted = toPersisted({ conversationId: ID, messages: [message(1, { products })] });
+    expect(persisted.messages[0]?.products).toHaveLength(24);
+    expect(restorePersisted(persisted)).not.toBeNull();
+  });
+});
+
 describe("restorePersisted", () => {
   it("restores a valid conversation", () => {
     const value = { conversationId: ID, messages: [message(0), message(1, { handoffUrl: "https://wa.me/62812" })] };
     expect(restorePersisted(value)).toEqual(value);
+  });
+
+  it("keeps a reply that gathered many product cards across tool rounds", () => {
+    const products = Array.from({ length: 20 }, (_, index) => ({ slug: `produk-${index}`, name: `Produk ${index}`, price: 100000, available: true }));
+    const restored = restorePersisted({ conversationId: ID, messages: [message(0), message(1, { products })] });
+    expect(restored?.messages[1]?.products).toHaveLength(20);
   });
 
   it("turns a reply that was still streaming into a stopped one", () => {
