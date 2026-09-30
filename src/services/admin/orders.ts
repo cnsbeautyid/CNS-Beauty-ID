@@ -2,6 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { trackServerEvent } from "@/services/analytics/record";
 import { BANK_TRANSFER_METHOD, MANUAL_PROVIDER } from "@/services/checkout/payment";
 import { PAYMENT_PROOF_BUCKET } from "@/services/order/order";
 import type { Database } from "@/types/database";
@@ -255,7 +256,7 @@ export async function transitionOrder(
     })
     .eq("id", orderId)
     .in("status", FROM[action])
-    .select("order_number")
+    .select("order_number, user_id")
     .maybeSingle();
   if (error) return { ok: false, reason: "error", detail: error.message };
   if (!data) {
@@ -265,5 +266,7 @@ export async function transitionOrder(
   const note = action === "ship" ? `Dikirim via ${extra.courier}, resi ${extra.trackingNumber}` : (extra.note ?? null);
   const { error: historyError } = await admin.from("order_status_history").insert({ order_id: orderId, status: target, note, changed_by: staffId });
   if (historyError) console.error("[admin] status history insert failed", historyError);
+  // The customer's event, not the staff member's.
+  if (action === "deliver") await trackServerEvent("ORDER_DELIVERED", { orderId, subject: { userId: data.user_id } });
   return { ok: true, orderNumber: data.order_number };
 }

@@ -7,15 +7,16 @@ import { ROUTES } from "@/constants/routes";
 import { AdminPageHeader } from "@/features/admin/page-header";
 import { formatIDR } from "@/lib/utils/format";
 import { requireStaff } from "@/services/admin/auth";
+import { getConversionRate } from "@/services/admin/analytics";
 import { getDashboard } from "@/services/admin/dashboard";
 
 export const metadata = { title: "Dashboard" };
 
-const percent = (value: number | null) => (value === null ? "—" : `${Math.round(value * 100)}%`);
+const percent = (value: number | null) => (value === null ? "—" : `${(value * 100).toLocaleString("id-ID", { maximumFractionDigits: 1 })}%`);
 
 export default async function AdminDashboardPage() {
   await requireStaff(ROUTES.admin.dashboard);
-  const dashboard = await getDashboard(30);
+  const [dashboard, conversion] = await Promise.all([getDashboard(30), getConversionRate(30)]);
 
   if (!dashboard) {
     return (
@@ -42,7 +43,7 @@ export default async function AdminDashboardPage() {
     { label: "Percakapan AI", value: dashboard.aiConversations.toLocaleString("id-ID"), hint: `${dashboard.aiEscalations} dialihkan ke tim` },
     { label: "GMV dibantu AI", value: formatIDR(kpis.aiAssistedGmv), hint: `${kpis.aiAssistedOrders} pesanan` },
     { label: "Penjualan partner", value: formatIDR(kpis.resellerGmv), hint: `${kpis.resellerOrders} pesanan` },
-    { label: "Konversi", value: "—", hint: "butuh data analytics (Phase 16)" },
+    { label: "Konversi", value: conversion === undefined ? "—" : percent(conversion), hint: "pengunjung yang membuat pesanan" },
   ];
   const tasks = [
     { label: "Menunggu konfirmasi pembayaran", count: queues.pendingPayment, href: `${ROUTES.admin.orders}?status=pending_payment` },

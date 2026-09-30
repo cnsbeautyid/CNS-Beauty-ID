@@ -1,12 +1,36 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 import { productPath } from "@/constants/routes";
+import { track } from "@/lib/analytics/client";
 import { formatIDR } from "@/lib/utils/format";
 import type { AIProductCard } from "@/services/ai/protocol";
 
 /** Recommendation cards. Every value comes from catalog tool data, never from model text. */
-export function AIProductCards({ products, onNavigate }: { products: AIProductCard[]; onNavigate?: () => void }) {
+export function AIProductCards({
+  products,
+  conversationId,
+  onNavigate,
+}: {
+  products: AIProductCard[];
+  conversationId?: string | null;
+  onNavigate?: () => void;
+}) {
+  const viewed = useRef(false);
+  useEffect(() => {
+    if (viewed.current || products.length === 0) return;
+    viewed.current = true;
+    track("AI_RECOMMENDATION_VIEWED", { properties: { count: products.length }, aiConversationId: conversationId });
+  }, [products.length, conversationId]);
+
+  const accept = (slug: string) => {
+    track("AI_RECOMMENDATION_ACCEPTED", { properties: { slug }, aiConversationId: conversationId });
+    onNavigate?.();
+  };
+
   return (
     <ul aria-label="Rekomendasi produk" className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
       {products.map((product) => (
@@ -17,7 +41,7 @@ export function AIProductCards({ products, onNavigate }: { products: AIProductCa
             </div>
             <div className="flex flex-1 flex-col gap-1 p-3">
               <h3 className="font-display text-body leading-snug">
-                <Link href={productPath(product.slug)} onClick={onNavigate} className="after:absolute after:inset-0 hover:underline">
+                <Link href={productPath(product.slug)} onClick={() => accept(product.slug)} className="after:absolute after:inset-0 hover:underline">
                   {product.name}
                 </Link>
               </h3>

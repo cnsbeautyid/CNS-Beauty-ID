@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { AskAIButton } from "@/components/ai/ask-ai-button";
+import { TrackEvent } from "@/components/analytics/track-event";
 import { ProductCard } from "@/components/product/product-card";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/states";
@@ -128,6 +129,9 @@ export function QuizResultView({ result, answers }: { result: QuizResult; answer
       </section>
 
       <section aria-labelledby="quiz-products-title" className="flex flex-col gap-5">
+        {result.products.length > 0 && (
+          <TrackEvent name="PRODUCT_RECOMMENDATION_VIEWED" properties={{ source: "skin_quiz", count: result.products.length }} />
+        )}
         <h2 id="quiz-products-title" className="text-h3">
           Produk yang direkomendasikan
         </h2>

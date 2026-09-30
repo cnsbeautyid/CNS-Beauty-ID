@@ -246,6 +246,7 @@ export type Database = {
           anonymous_id: string | null
           created_at: string
           event_name: string
+          event_version: number
           id: number
           order_id: string | null
           path: string | null
@@ -263,6 +264,7 @@ export type Database = {
           anonymous_id?: string | null
           created_at?: string
           event_name: string
+          event_version?: number
           id?: never
           order_id?: string | null
           path?: string | null
@@ -280,6 +282,7 @@ export type Database = {
           anonymous_id?: string | null
           created_at?: string
           event_name?: string
+          event_version?: number
           id?: never
           order_id?: string | null
           path?: string | null
@@ -3136,6 +3139,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      analytics_event_counts: {
+        Args: { p_since: string }
+        Returns: {
+          event_name: string
+          events: number
+          visitors: number
+        }[]
+      }
+      analytics_funnel: {
+        Args: { p_since: string; p_steps: string[] }
+        Returns: {
+          event_name: string
+          step: number
+          visitors: number
+        }[]
+      }
       admin_adjust_points: {
         Args: {
           p_points: number

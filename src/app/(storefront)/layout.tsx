@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { AILauncher } from "@/components/ai/ai-launcher";
 import { AIPanel } from "@/components/ai/ai-panel";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -18,6 +19,7 @@ export default function StorefrontLayout({ children }: { children: ReactNode }) 
       <SiteFooter />
       <AILauncher />
       <AIPanel />
+      <PageViewTracker />
     </QueryProvider>
   );
 }

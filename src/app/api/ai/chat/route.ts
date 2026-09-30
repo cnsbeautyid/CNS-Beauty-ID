@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
+import { ANALYTICS_EVENT_VERSION, ANONYMOUS_ID_COOKIE as ANONYMOUS_COOKIE, ANONYMOUS_ID_MAX_AGE } from "@/constants/analytics";
 import { getSessionUser } from "@/lib/auth/session";
 import { createRateLimiter } from "@/lib/utils/rate-limit";
 import { whatsappUrl } from "@/lib/utils/whatsapp";
@@ -11,6 +12,8 @@ import { isConciergeEnabled, logMessage, markEscalated, resolveConversation } fr
 import { createLLMClient } from "@/services/ai/llm";
 import { chatRequestSchema, encodeEvent, type ConciergeEvent } from "@/services/ai/protocol";
 import { CONCIERGE_TOOLS, PARTNER_TOOLS } from "@/services/ai/tools";
+import { isOptedOut } from "@/services/analytics/model";
+import { insertEvents } from "@/services/analytics/record";
 import { getCatalogFacets } from "@/services/catalog/products";
 import { getPublicContact } from "@/services/content/contact";
 import { PARTNER_TYPE_LABELS } from "@/services/reseller/model";
@@ -18,7 +21,6 @@ import { getOwnPartner } from "@/services/reseller/reseller";
 
 export const dynamic = "force-dynamic";
 
-const ANONYMOUS_COOKIE = "cns_aid";
 const MAX_BODY_BYTES = 64_000;
 const limiter = createRateLimiter({ limit: 12, windowMs: 60_000 });
 
@@ -50,6 +52,7 @@ export async function POST(request: NextRequest) {
   const storedId = request.cookies.get(ANONYMOUS_COOKIE)?.value;
   const anonymousId = storedId && z.uuid().safeParse(storedId).success ? storedId : randomUUID();
   if (!limiter.hit(user?.id ?? anonymousId)) return reject(429, "rate_limited");
+  const optedOut = isOptedOut(request.headers);
 
   const llm = createLLMClient();
   const encoder = new TextEncoder();
@@ -88,6 +91,16 @@ export async function POST(request: NextRequest) {
         // Partner mode only for a verified active partner on a partner page;
         // pageType is a hint from the browser, the partner row is the authority.
         const partner = user && pageContext?.pageType === "reseller" ? await getOwnPartner() : null;
+        void insertEvents(
+          (partner ? (["AI_MESSAGE_SENT", "RESELLER_AI_USED"] as const) : (["AI_MESSAGE_SENT"] as const)).map((name) => ({
+            event_name: name,
+            event_version: ANALYTICS_EVENT_VERSION,
+            user_id: optedOut ? null : (user?.id ?? null),
+            anonymous_id: optedOut ? null : anonymousId,
+            ai_conversation_id: conversationId,
+            properties: { pageType: pageContext?.pageType ?? "other" },
+          })),
+        );
         const facets = await getCatalogFacets();
         const startedAt = Date.now();
         const turn = runConcierge({
@@ -141,7 +154,7 @@ export async function POST(request: NextRequest) {
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24 * 365,
+      maxAge: ANONYMOUS_ID_MAX_AGE,
     });
   }
   return response;

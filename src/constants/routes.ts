@@ -12,6 +12,7 @@ export const ROUTES = {
   contact: "/kontak",
   faq: "/faq",
   resellerProgram: "/reseller",
+  privacy: "/kebijakan-privasi",
 
   // Catalog
   products: "/produk",

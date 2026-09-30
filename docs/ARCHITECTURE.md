@@ -2,9 +2,64 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 15)
-- **Current phase:** Phase 15 Admin (core operations), done and validated
-- **Next phase:** Phase 16 Analytics
+- **Last updated:** 2026-09-30 (Phase 16)
+- **Current phase:** Phase 16 Analytics, done and validated
+- **Next phase:** Phase 17
+
+## Phase 16 summary
+
+**Owner decisions:**
+- Apply the migration to the live DB.
+- Map the 36 legacy events to the new names.
+- No consent banner: minimal first-party analytics is on by default. Do Not Track / GPC are honoured, and a privacy page explains it. Final legal sign-off stays with the owner.
+
+- **Event contract** (`constants/analytics.ts`; migration `20260930120000_analytics_events_v1`, applied to live):
+  - The 20 names from CLAUDE.md §14 / PRD §30, plus both `PRODUCT_RECOMMENDATION_VIEWED` (CLAUDE.md) and `AI_RECOMMENDATION_VIEWED` (PRD). The DB `CHECK` lists the same set.
+  - `event_version` (1 = this contract; the 36 migrated rows are 0: 25 `PRODUCT_VIEWED`, 11 `AI_OPENED`).
+  - `properties` must be a JSON object of at most 2 KB. `path` is at most 300 characters. `anonymous_id` must be UUID-shaped.
+  - Per-event property schemas for browser events (`services/analytics/model.ts`) drop unknown keys.
+- **Ingestion is server-only** (closes gap #4):
+  - `anon`/`authenticated` lost every privilege on `analytics_events` except `SELECT` (anon previously held full table privileges). Staff read through the existing `staff_select` policy.
+  - All writes go through the service role in `services/analytics/record.ts`. **Without `SUPABASE_SERVICE_ROLE_KEY` nothing is stored**: one warning is logged and the site works normally.
+  - **Browser events** (`CLIENT_EVENTS`: page/product/search/recommendation views, AI opened / recommendation viewed / accepted, checkout started, quiz started, loyalty viewed) go to `POST /api/analytics`:
+    - same-origin only;
+    - capped at 4 KB; rate-limited to 60 per minute per visitor id (many mobile users share one carrier IP), or 120 per minute per IP for cookieless requests;
+    - validated with Zod;
+    - identity comes from the session plus the first-party cookie, never from the body;
+    - an AI conversation link is kept only when that conversation belongs to the visitor;
+    - the response is always 204, so pages never wait.
+  - **Server events** are recorded where the state change happens (`trackServerEvent`, after the response via `after()`). They can't be forged:
+    - `ADD_TO_CART` (product / skin_quiz / reorder), `REMOVE_FROM_CART`, `VOUCHER_APPLIED` (discount only; the code is left out because it may be a personal referral code);
+    - `ORDER_CREATED` (checkout);
+    - `PAYMENT_STARTED` (payment proof uploaded);
+    - `ORDER_DELIVERED` (admin "delivered"; recorded as the customer, never the staff member);
+    - `SKIN_QUIZ_COMPLETED`;
+    - `AI_MESSAGE_SENT` and `RESELLER_AI_USED` (chat route).
+  - A failed insert never affects the action.
+- **Identity and PII:**
+  - `cns_aid` (random UUID, httpOnly, 1 year; the Beauty Concierge already used it) is set by the proxy on the **first page response**, so browser and server events share one id.
+  - The tab session id lives in `sessionStorage`. UTM tags are taken from the landing URL.
+  - `path` is the pathname only, with ids and order numbers collapsed to `:id`. `/admin` and `/api` pages are never tracked. `referrer` is the external host only.
+  - No names, emails, phone numbers or addresses in events.
+  - **DNT / `Sec-GPC`:** the browser sends nothing, the endpoint stores nothing, the proxy sets no id, and server events are recorded with no user or anonymous id, so they appear in totals but not in funnels.
+- **Reports** (`/admin/analytics?hari=7|30|90`):
+  - `analytics_funnel()` / `analytics_event_counts()` are SQL functions with `SECURITY INVOKER`, so staff RLS applies and customers get empty results. Execute is revoked from anon.
+  - Three funnels: primary (page → product → add to cart → checkout → order), AI (open → message → recommendation viewed → accepted → add to cart → order) and Skin Quiz.
+  - Also: every event with events and unique visitors, top search terms, and visit sources (UTM / referrer host / direct).
+  - Funnels count unique visitors who reached every earlier step in the window, **order-agnostic**. A visitor is the `cns_aid`, or the user id when no `cns_aid` is available; a person on two devices counts twice.
+  - **The dashboard "Konversi" KPI is live:** visitors with `ORDER_CREATED` ÷ visitors with `PAGE_VIEWED` over 30 days.
+- **Privacy page:** `/kebijakan-privasi`, linked in the footer. It covers the data kept, analytics, cookies, use and sharing, and rights. **Legal review by the owner is needed** before relying on it.
+- **Verified on the live DB** in a rolled-back transaction:
+  - legacy rows mapped;
+  - old names and non-object properties rejected;
+  - anon and customer inserts denied, and anon can't execute the report functions;
+  - a customer sees an empty funnel, and an admin sees the correct funnel.
+  - Security advisors: nothing new.
+- **Also fixed:** a staff-path check that was a prefix match (`/admin-x` counted as `/admin`) is now segment-based.
+- **Not yet:**
+  - `REVIEW_CREATED` has no emitter (there is no review form yet).
+  - Retention/aggregation of raw events (Phase 18).
+  - A shared rate-limit store (Phase 21).
 
 ## Phase 15 summary
 
@@ -599,7 +654,7 @@ The repository contained **specifications only**: no application code, no
    `is_active`, so the rule "only PUBLISHED knowledge in production retrieval"
    cannot be enforced. Needs a status lifecycle, chunks and embeddings
    (pgvector) for RAG.
-4. **Medium:** `analytics_events` accepts arbitrary anonymous inserts. Route
+4. **Medium (fixed in Phase 16):** `analytics_events` accepts arbitrary anonymous inserts. Route
    ingestion through a server endpoint.
 5. **Medium:** `is_admin()`/`is_reseller()` are `SECURITY DEFINER` in the
    exposed `public` schema. Move them to a private schema.
@@ -710,3 +765,4 @@ Follow master prompt §26, with these gates:
 | 13 | pass | pass | 145/145 (incl. loyalty model, redeem action, checkout points, loyalty AI tool) | pass | 191 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Ledger lockdown verified on the live DB |
 | 14 | pass | pass | 161/161 (incl. reseller model, application action, partner AI tools) | pass | 207 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-out paths + axe on `/reseller`; partner RLS verified on the live DB |
 | 15 | pass | pass | 182/182 (incl. admin model, admin action authorization/audit integration) | pass | 231 pass, 13 skipped; 4 failed on `ConnectTimeoutError` / slow responses from the live Supabase during the run (cart/catalog specs untouched by Phase 15; they passed in the previous run and in isolation). All 28 new admin E2E pass (14 tests × 2 devices) |
+| 16 | pass | pass | 209/209 (incl. analytics model/contract, ingest route, server recorder, event emitters in checkout/quiz/reorder) | pass | 251 pass, 13 skipped, 0 failed (incl. 14 new analytics E2E + privacy page a11y) |

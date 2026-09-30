@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 const mocks = vi.hoisted(() => ({
+  trackServerEvent: vi.fn(),
   getSessionUser: vi.fn(),
   readCart: vi.fn(),
   writeCart: vi.fn(async () => undefined),
@@ -26,6 +27,7 @@ vi.mock("@/services/cart/store", () => ({ readCart: mocks.readCart, writeCart: m
 vi.mock("@/services/cart/quote", () => ({ quoteCart: mocks.quoteCart }));
 vi.mock("@/services/checkout/addresses", () => ({ getCheckoutPrefill: mocks.getCheckoutPrefill, saveAddress: mocks.saveAddress }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
+vi.mock("@/services/analytics/record", () => ({ trackServerEvent: mocks.trackServerEvent }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/lib/env/server", () => ({ getServerEnv: () => ({ SUPABASE_SERVICE_ROLE_KEY: "sb_secret_test" }) }));
 vi.mock("@/lib/env/client", () => ({ getSupabasePublicConfig: () => ({ url: "https://x.supabase.co", publishableKey: "pk" }) }));
@@ -107,6 +109,10 @@ describe("placeOrderAction", () => {
     expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ order_id: ORDER_ID, provider: "manual", amount: 320000, status: "pending" }));
     expect(mocks.writeCart).toHaveBeenCalledWith({ v: 1, items: [] });
     expect(mocks.saveAddress).toHaveBeenCalledWith(USER.id, shipping, []);
+    expect(mocks.trackServerEvent).toHaveBeenCalledWith("ORDER_CREATED", {
+      orderId: ORDER_ID,
+      properties: expect.objectContaining({ total: 320000, itemCount: 1, coupon: false }),
+    });
   });
 
   it("re-quotes with the chosen points and redeems what the quote applied", async () => {
