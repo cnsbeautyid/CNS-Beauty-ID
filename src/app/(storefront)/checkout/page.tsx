@@ -10,6 +10,7 @@ import { ROUTES } from "@/constants/routes";
 import { AccountStrip } from "@/features/auth/sign-out-button";
 import { CheckoutForm } from "@/features/checkout/checkout-form";
 import { OrderSummary } from "@/features/checkout/order-summary";
+import { PointsForm } from "@/features/checkout/points-form";
 import { getSessionUser } from "@/lib/auth/session";
 import { formatIDR } from "@/lib/utils/format";
 import { CartStoreError, readCart } from "@/services/cart/store";
@@ -17,6 +18,8 @@ import { quoteCart } from "@/services/cart/quote";
 import { quoteErrorMessage } from "@/services/cart/quote-schema";
 import { getCheckoutPrefill } from "@/services/checkout/addresses";
 import { getPaymentSettings, getShippingInfo } from "@/services/checkout/payment";
+import { getLoyaltyProgramme, getOwnLoyaltyAccount } from "@/services/loyalty/loyalty";
+import { parsePointsParam } from "@/services/loyalty/model";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -43,7 +46,7 @@ const BackToCart = () => (
   </ButtonLink>
 );
 
-export default async function CheckoutPage() {
+export default async function CheckoutPage({ searchParams }: PageProps<"/checkout">) {
   const user = await getSessionUser();
   // Login is required (owner decision, Phase 7). Re-checked in the action.
   if (!user) redirect(`${ROUTES.signIn}?next=${encodeURIComponent(ROUTES.checkout)}`);
@@ -72,8 +75,14 @@ export default async function CheckoutPage() {
     );
   }
 
+  // Points are URL state (?poin=N). Never more than the balance: asking for more
+  // makes quote_cart report points_insufficient and blocks checkout.
+  const [account, programme] = await Promise.all([getOwnLoyaltyAccount(), getLoyaltyProgramme()]);
+  const balance = account?.balance ?? 0;
+  const points = Math.min(parsePointsParam((await searchParams).poin), balance);
+
   const [result, payment, shipping, prefill] = await Promise.all([
-    quoteCart(cart, user.id),
+    quoteCart(cart, user.id, points),
     getPaymentSettings(),
     getShippingInfo(),
     getCheckoutPrefill(),
@@ -121,8 +130,18 @@ export default async function CheckoutPage() {
     <Shell email={user.email}>
       <div className="grid gap-10 desktop:grid-cols-3">
         <div className="desktop:col-span-2">
+          {balance > 0 && (programme?.settings.pointValue ?? 0) > 0 && (
+            <PointsForm
+              balance={balance}
+              requested={points}
+              applied={quote.pointsApplied}
+              pointValue={programme?.settings.pointValue ?? 0}
+              maxPercent={programme?.settings.maxRedeemPercent ?? 0}
+            />
+          )}
           <CheckoutForm
             total={quote.total}
+            points={quote.pointsApplied}
             defaultShipping={
               defaultAddress ?? {
                 recipientName: prefill.fullName ?? "",

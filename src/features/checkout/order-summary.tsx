@@ -39,6 +39,12 @@ export function OrderSummary({ quote }: { quote: CartQuote }) {
             <dd>− {formatIDR(quote.discountTotal)}</dd>
           </div>
         )}
+        {quote.pointsDiscount > 0 && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-text-secondary">Poin ditukar ({quote.pointsApplied.toLocaleString("id-ID")} poin)</dt>
+            <dd>− {formatIDR(quote.pointsDiscount)}</dd>
+          </div>
+        )}
         <div className="flex justify-between gap-4">
           <dt className="text-text-secondary">Ongkos kirim</dt>
           <dd>{quote.shippingTotal === 0 ? "Gratis" : formatIDR(quote.shippingTotal)}</dd>

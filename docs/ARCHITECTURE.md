@@ -2,9 +2,36 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 12)
-- **Current phase:** Phase 12 Routine, done and validated
-- **Next phase:** Phase 13 Loyalty
+- **Last updated:** 2026-09-30 (Phase 13)
+- **Current phase:** Phase 13 Loyalty (CNS Rewards), done and validated
+- **Next phase:** Phase 14 Reseller
+
+## Phase 13 summary
+
+**Live programme data** (owner-managed; the storefront invents nothing):
+- 1 tier, "Glow", from 0 points.
+- 1 active rule: 1 point per Rp100 paid. The review, referral, birthday and signup rules exist but are inactive.
+- **0 rewards.**
+- `settings.loyalty`: 1 point = Rp1, redeemable up to 50%.
+
+Points only change through the ledger functions: `mark_order_paid` / `post_loyalty_transaction` for earning, and `redeem_reward` / `place_order` / `release_order` for spending and refunds.
+
+- **`/account/loyalty` "CNS Rewards"** (RLS):
+  - Balance and lifetime points; tier and progress to the next tier.
+  - How to earn (active rules, described from their own numbers) and the point value and redemption cap from settings.
+  - Rewards with a confirm-then-redeem flow, or an empty state while there are none.
+  - "Voucher & hadiahku", the customer's redemptions. Voucher codes come from `coupons`, looked up with the service role only for rows RLS already proved are theirs.
+  - The customer's point history.
+- **Redeem** (`redeemRewardAction` → `public.redeem_reward`, service role): the user id comes from the session. The function checks the balance and stock under a row lock, debits the points and issues a single-use 90-day coupon for discount or free-shipping rewards. Rejections are explained (insufficient balance, out of stock, unavailable).
+- **Checkout redemption:**
+  - The number of points is URL state, `?poin=N`, set by a GET form (next/form).
+  - The page uses `min(N, balance)`, because asking for more makes `quote_cart` report `points_insufficient`.
+  - It re-quotes with `p_points`; `quote_cart` also caps at `max_redeem_percent`, and the summary shows "Poin ditukar".
+  - `placeOrderAction` re-quotes with the same points, compares the total, and passes the *applied* points to `place_order`, which debits them in the same transaction (`release_order` refunds them).
+  - `CartQuote` now carries `pointsApplied` / `pointsDiscount`, and `quoteCart(cart, userId, points)` accepts points only for signed-in users.
+- **Order page:** "Poin ditukar" is shown separately from coupon discounts (they used to be combined), and the points earned appear once payment is confirmed.
+- **Concierge:** a new tool `get_my_loyalty` (signed-in only, RLS): balance, tier, next tier, point value, redemption cap and recent activity. The prompt says the balance comes only from this tool.
+- **No migration.** Verified on the live DB inside a transaction that was rolled back: a customer can't insert ledger rows, create or raise a balance, insert redemptions, call `redeem_reward` directly, or read another customer's balance.
 
 ## Phase 12 summary
 
@@ -601,3 +628,4 @@ Follow master prompt §26, with these gates:
 | 10 | pass | pass | 109/109 (incl. knowledge retrieval tests) | pass | 177 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Knowledge guard/chunking verified on the live DB in rolled-back transactions |
 | 11 | pass | pass | 122/122 (incl. scoring + quiz action tests) | pass | 187 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Quiz E2E runs against the live catalog, incl. axe on quiz and results |
 | 12 | pass | pass | 133/133 (incl. routine model, routine actions, profile/routine AI tool) | pass | 189 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-in routine flows covered by integration tests + live RLS check |
+| 13 | pass | pass | 145/145 (incl. loyalty model, redeem action, checkout points, loyalty AI tool) | pass | 191 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Ledger lockdown verified on the live DB |

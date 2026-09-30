@@ -21,7 +21,7 @@
 - [x] Skin Quiz (Phase 11 — /skin-quiz, rule-based quiz-v1 scoring, routine, add routine to cart)
 - [x] Skin Profile (Phase 11 — beauty_profiles upsert, /account/skin-profile)
 - [x] Routine (Phase 12 — /account/routine builder, quiz → routine, routine to cart, AI profile/routine tool)
-- [ ] Loyalty
+- [x] Loyalty (Phase 13 — CNS Rewards page, reward redemption, points at checkout, loyalty AI tool)
 - [ ] Beauty Concierge
 - [ ] Journal
 - [ ] Reseller Portal

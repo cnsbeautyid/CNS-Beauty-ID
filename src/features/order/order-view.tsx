@@ -165,6 +165,12 @@ export function OrderView({ order, userId, payment, deadline, whatsapp }: OrderV
               <dd>− {formatIDR(order.discountTotal)}</dd>
             </div>
           )}
+          {order.pointsDiscount > 0 && (
+            <div className="flex justify-between gap-4">
+              <dt className="text-text-secondary">Poin ditukar ({order.pointsRedeemed.toLocaleString("id-ID")} poin)</dt>
+              <dd>− {formatIDR(order.pointsDiscount)}</dd>
+            </div>
+          )}
           <div className="flex justify-between gap-4">
             <dt className="text-text-secondary">Ongkos kirim</dt>
             <dd>{order.shippingTotal === 0 ? "Gratis" : formatIDR(order.shippingTotal)}</dd>
@@ -174,6 +180,9 @@ export function OrderView({ order, userId, payment, deadline, whatsapp }: OrderV
             <dd>{formatIDR(order.total)}</dd>
           </div>
         </dl>
+        {order.pointsEarned > 0 && (
+          <p className="mt-3 text-caption text-success">+{order.pointsEarned.toLocaleString("id-ID")} poin CNS Rewards dari pesanan ini</p>
+        )}
         <div className="mt-6 flex flex-col gap-3">
           {order.items.length > 0 && <ReorderButton orderId={order.id} />}
           <ButtonLink href={ROUTES.products} variant="secondary" fullWidth>

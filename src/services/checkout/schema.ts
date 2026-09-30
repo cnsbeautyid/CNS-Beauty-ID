@@ -29,6 +29,8 @@ export const checkoutSchema = z.object({
     .optional()
     .transform((value) => value || undefined),
   saveAddress: z.boolean().default(false),
+  /** Loyalty points the customer chose (capped server-side at the balance and max_redeem_percent). */
+  points: z.number().int().min(0).max(10_000_000).default(0),
   /** The total the customer saw. A mismatch with a fresh quote is a checkout conflict. */
   expectedTotal: z.number().int().nonnegative(),
 });

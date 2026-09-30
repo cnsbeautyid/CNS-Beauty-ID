@@ -18,8 +18,10 @@ export type CartQuoteResult =
  * service_role only, so this runs server-side with the secret key).
  * `userId` MUST come from getSessionUserId(), never from the request: the
  * function applies partner pricing and loyalty points for that user.
+ * `points` is the number the customer asked to redeem; the quote reports how
+ * many actually apply (pointsApplied).
  */
-export async function quoteCart(cart: CartState, userId: string | null): Promise<CartQuoteResult> {
+export async function quoteCart(cart: CartState, userId: string | null, points = 0): Promise<CartQuoteResult> {
   if (cart.items.length === 0) return { status: "empty" };
   if (!getSupabasePublicConfig() || !getServerEnv().SUPABASE_SERVICE_ROLE_KEY) return { status: "unavailable" };
 
@@ -29,7 +31,8 @@ export async function quoteCart(cart: CartState, userId: string | null): Promise
       p_items: cart.items.map((line) => ({ product_id: line.p, variant_id: line.v ?? null, quantity: line.q })),
       p_user_id: userId ?? undefined,
       p_coupon_code: cart.coupon,
-      p_points: 0,
+      // quote_cart caps points at the balance and max_redeem_percent; guests can't redeem.
+      p_points: userId ? Math.max(0, Math.trunc(points)) : 0,
     });
     if (error) throw error;
     const quote = toCartQuote(data);

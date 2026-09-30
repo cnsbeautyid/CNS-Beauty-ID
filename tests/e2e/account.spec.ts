@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 // Auth. Signed-in flows are covered by integration tests and RLS checks.
 
 test.describe("Customer account requires login", () => {
-  for (const path of ["/account", "/account/orders", "/account/orders?halaman=2", "/account/wishlist", "/account/settings"]) {
+  for (const path of ["/account", "/account/orders", "/account/orders?halaman=2", "/account/wishlist", "/account/settings", "/account/loyalty"]) {
     test(`${path} redirects to sign in and back`, async ({ page }) => {
       await page.goto(path);
       await expect(page).toHaveURL(new RegExp(`/masuk\\?next=${encodeURIComponent(path.split("?")[0] ?? path)}$`));

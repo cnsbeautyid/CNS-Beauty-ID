@@ -59,6 +59,9 @@ export type CartQuote = {
   }[];
   subtotal: number;
   discountTotal: number;
+  /** Loyalty points redeemed in this quote and their rupiah value (1 point = settings.loyalty.point_value). */
+  pointsApplied: number;
+  pointsDiscount: number;
   shippingTotal: number;
   total: number;
   coupon: { code: string; description: string | null } | null;
@@ -85,6 +88,8 @@ export function toCartQuote(raw: unknown): CartQuote | null {
     })),
     subtotal: q.subtotal,
     discountTotal: q.discount_total,
+    pointsApplied: q.points_applied,
+    pointsDiscount: q.points_discount,
     shippingTotal: q.shipping_total,
     total: q.total,
     coupon: q.coupon ? { code: q.coupon.code, description: q.coupon.description } : null,
@@ -136,7 +141,7 @@ export function quoteErrorMessage(error: QuoteError): string {
     case "cart_empty":
       return "Keranjangmu kosong.";
     case "points_insufficient":
-      return "Poin tidak mencukupi.";
+      return error.balance !== undefined ? `Poin tidak mencukupi (saldo ${error.balance.toLocaleString("id-ID")} poin).` : "Poin tidak mencukupi.";
     default:
       return "Ada kendala pada keranjang. Silakan coba lagi.";
   }

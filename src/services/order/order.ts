@@ -8,7 +8,7 @@ const ORDER_COLUMNS = `
   id, order_number, status, created_at, paid_at,
   shipping_recipient, shipping_phone, shipping_address, shipping_district,
   shipping_city, shipping_province, shipping_postal_code, shipping_courier, tracking_number,
-  subtotal, discount_total, points_discount, shipping_total, total, coupon_code, notes,
+  subtotal, discount_total, points_discount, points_redeemed, points_earned, shipping_total, total, coupon_code, notes,
   order_items(id, product_name, variant_name, quantity, unit_price, line_total),
   order_status_history(status, note, created_at),
   payments(provider, method, status, amount, expires_at)
@@ -34,6 +34,10 @@ export type OwnOrder = {
   items: { id: string; name: string; variantName: string | null; quantity: number; unitPrice: number; lineTotal: number }[];
   subtotal: number;
   discountTotal: number;
+  pointsRedeemed: number;
+  pointsDiscount: number;
+  /** Points credited once payment is confirmed (0 before). */
+  pointsEarned: number;
   shippingTotal: number;
   total: number;
   couponCode: string | null;
@@ -89,7 +93,10 @@ export async function getOwnOrder(orderNumber: string, userId: string): Promise<
           lineTotal: item.line_total,
         })),
         subtotal: data.subtotal,
-        discountTotal: data.discount_total + data.points_discount,
+        discountTotal: data.discount_total,
+        pointsRedeemed: data.points_redeemed,
+        pointsDiscount: data.points_discount,
+        pointsEarned: data.points_earned,
         shippingTotal: data.shipping_total,
         total: data.total,
         couponCode: data.coupon_code,

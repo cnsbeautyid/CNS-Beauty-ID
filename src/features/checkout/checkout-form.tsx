@@ -21,6 +21,8 @@ type SavedAddressOption = ShippingDetails & { id: string; label: string | null }
 
 type CheckoutFormProps = {
   total: number;
+  /** Points already applied in the quote shown (from ?poin=). */
+  points: number;
   defaultShipping: ShippingDetails;
   savedAddresses: SavedAddressOption[];
   shippingNote: string;
@@ -54,7 +56,7 @@ function Step({ number, title, children }: { number: number; title: string; chil
 }
 
 /** Linear checkout (PRD §21): address → shipping → voucher → payment → confirmation. */
-export function CheckoutForm({ total, defaultShipping, savedAddresses, shippingNote, coupon, expiryHours }: CheckoutFormProps) {
+export function CheckoutForm({ total, points, defaultShipping, savedAddresses, shippingNote, coupon, expiryHours }: CheckoutFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<CheckoutActionResult | null>(null);
@@ -73,7 +75,7 @@ export function CheckoutForm({ total, defaultShipping, savedAddresses, shippingN
   const onSubmit = handleSubmit((values) =>
     startTransition(async () => {
       // The total shown right now (it updates after a refresh on conflict).
-      const result = await placeOrderAction({ ...values, expectedTotal: total });
+      const result = await placeOrderAction({ ...values, points, expectedTotal: total });
       setFailure(result);
       if (result.code === "checkout_conflict") router.refresh();
     }),
