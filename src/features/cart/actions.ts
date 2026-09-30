@@ -6,7 +6,7 @@ import { z } from "zod";
 import { ROUTES } from "@/constants/routes";
 import { getSessionUserId } from "@/lib/auth/session";
 import { createPublicClient } from "@/lib/supabase/public";
-import { readCart, writeCart } from "@/services/cart/cookie";
+import { CartStoreError, readCart, writeCart } from "@/services/cart/store";
 import {
   addItem,
   couponCodeSchema,
@@ -24,6 +24,21 @@ import { COUPON_ERROR_CODES, quoteErrorMessage } from "@/services/cart/quote-sch
 // stock or identity. Totals always come from quoteCart().
 
 export type CartActionResult = { ok: true; count: number; message?: string } | { ok: false; message: string };
+
+const STORE_FAILED = "Keranjang belum dapat diperbarui. Silakan coba lagi.";
+
+/** Turns a cart storage failure into an honest message instead of a crash. */
+async function guarded<T>(run: () => Promise<T>, onStoreError: T): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (!(error instanceof CartStoreError)) throw error;
+    console.error("[cart] storage failed", error.cause);
+    return onStoreError;
+  }
+}
+
+const FAILED: CartActionResult = { ok: false, message: STORE_FAILED };
 
 const lineKeySchema = z.string().regex(/^[0-9a-f-]{36}(:[0-9a-f-]{36})?$/i);
 
@@ -46,12 +61,14 @@ export async function addToCartAction(input: unknown): Promise<CartActionResult>
   if (!product) return { ok: false, message: "Produk ini sudah tidak tersedia." };
   if (!variantId && product.stock <= 0) return { ok: false, message: "Stok habis." };
 
-  const change = addItem(await readCart(), productId, variantId, quantity);
-  if ("error" in change) return { ok: false, message: `Keranjang maksimal berisi ${MAX_CART_LINES} produk.` };
+  return guarded(async (): Promise<CartActionResult> => {
+    const change = addItem(await readCart(), productId, variantId, quantity);
+    if ("error" in change) return { ok: false, message: `Keranjang maksimal berisi ${MAX_CART_LINES} produk.` };
 
-  await writeCart(change.cart);
-  revalidatePath(ROUTES.cart);
-  return { ok: true, count: itemCount(change.cart), message: "Ditambahkan ke keranjang." };
+    await writeCart(change.cart);
+    revalidatePath(ROUTES.cart);
+    return { ok: true, count: itemCount(change.cart), message: "Ditambahkan ke keranjang." };
+  }, FAILED);
 }
 
 const quantitySchema = z.object({ key: lineKeySchema, quantity: z.number().int().min(1).max(MAX_QUANTITY) });
@@ -59,19 +76,23 @@ const quantitySchema = z.object({ key: lineKeySchema, quantity: z.number().int()
 export async function updateQuantityAction(input: unknown): Promise<CartActionResult> {
   const parsed = quantitySchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: "Jumlah tidak valid." };
-  const cart = setQuantity(await readCart(), parsed.data.key, parsed.data.quantity);
-  await writeCart(cart);
-  revalidatePath(ROUTES.cart);
-  return { ok: true, count: itemCount(cart) };
+  return guarded(async (): Promise<CartActionResult> => {
+    const cart = setQuantity(await readCart(), parsed.data.key, parsed.data.quantity);
+    await writeCart(cart);
+    revalidatePath(ROUTES.cart);
+    return { ok: true, count: itemCount(cart) };
+  }, FAILED);
 }
 
 export async function removeItemAction(input: unknown): Promise<CartActionResult> {
   const parsed = z.object({ key: lineKeySchema }).safeParse(input);
   if (!parsed.success) return { ok: false, message: "Permintaan tidak valid." };
-  const cart = removeItem(await readCart(), parsed.data.key);
-  await writeCart(cart);
-  revalidatePath(ROUTES.cart);
-  return { ok: true, count: itemCount(cart), message: "Produk dihapus dari keranjang." };
+  return guarded(async (): Promise<CartActionResult> => {
+    const cart = removeItem(await readCart(), parsed.data.key);
+    await writeCart(cart);
+    revalidatePath(ROUTES.cart);
+    return { ok: true, count: itemCount(cart), message: "Produk dihapus dari keranjang." };
+  }, FAILED);
 }
 
 export type CouponFormState = { status: "idle" | "success" | "error"; message?: string };
@@ -81,26 +102,30 @@ export async function applyCouponAction(_previous: CouponFormState, formData: Fo
   const code = couponCodeSchema.safeParse(formData.get("code") ?? "");
   if (!code.success) return { status: "error", message: "Masukkan kode kupon yang valid." };
 
-  const cart = await readCart();
-  if (cart.items.length === 0) return { status: "error", message: "Keranjangmu masih kosong." };
+  return guarded(async (): Promise<CouponFormState> => {
+    const cart = await readCart();
+    if (cart.items.length === 0) return { status: "error", message: "Keranjangmu masih kosong." };
 
-  const candidate = setCoupon(cart, code.data);
-  const result = await quoteCart(candidate, await getSessionUserId());
-  if (result.status !== "ok") return { status: "error", message: "Kupon belum dapat diperiksa. Silakan coba lagi nanti." };
+    const candidate = setCoupon(cart, code.data);
+    const result = await quoteCart(candidate, await getSessionUserId());
+    if (result.status !== "ok") return { status: "error", message: "Kupon belum dapat diperiksa. Silakan coba lagi nanti." };
 
-  const couponError = result.quote.errors.find((error) => COUPON_ERROR_CODES.has(error.code));
-  if (couponError || !result.quote.coupon) {
-    return { status: "error", message: couponError ? quoteErrorMessage(couponError) : "Kode kupon tidak valid." };
-  }
+    const couponError = result.quote.errors.find((error) => COUPON_ERROR_CODES.has(error.code));
+    if (couponError || !result.quote.coupon) {
+      return { status: "error", message: couponError ? quoteErrorMessage(couponError) : "Kode kupon tidak valid." };
+    }
 
-  await writeCart(candidate);
-  revalidatePath(ROUTES.cart);
-  return { status: "success", message: `Kupon ${result.quote.coupon.code} diterapkan.` };
+    await writeCart(candidate);
+    revalidatePath(ROUTES.cart);
+    return { status: "success", message: `Kupon ${result.quote.coupon.code} diterapkan.` };
+  }, { status: "error", message: STORE_FAILED });
 }
 
 export async function removeCouponAction(): Promise<CartActionResult> {
-  const cart = setCoupon(await readCart(), undefined);
-  await writeCart(cart);
-  revalidatePath(ROUTES.cart);
-  return { ok: true, count: itemCount(cart), message: "Kupon dihapus." };
+  return guarded(async (): Promise<CartActionResult> => {
+    const cart = setCoupon(await readCart(), undefined);
+    await writeCart(cart);
+    revalidatePath(ROUTES.cart);
+    return { ok: true, count: itemCount(cart), message: "Kupon dihapus." };
+  }, FAILED);
 }

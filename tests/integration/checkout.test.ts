@@ -9,7 +9,7 @@ vi.mock("server-only", () => ({}));
 const mocks = vi.hoisted(() => ({
   getSessionUser: vi.fn(),
   readCart: vi.fn(),
-  writeCart: vi.fn(),
+  writeCart: vi.fn(async () => undefined),
   quoteCart: vi.fn(),
   getCheckoutPrefill: vi.fn(),
   saveAddress: vi.fn(),
@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/auth/session", () => ({ getSessionUser: mocks.getSessionUser }));
-vi.mock("@/services/cart/cookie", () => ({ readCart: mocks.readCart, writeCart: mocks.writeCart }));
+vi.mock("@/services/cart/store", () => ({ readCart: mocks.readCart, writeCart: mocks.writeCart, CartStoreError: class extends Error {} }));
 vi.mock("@/services/cart/quote", () => ({ quoteCart: mocks.quoteCart }));
 vi.mock("@/services/checkout/addresses", () => ({ getCheckoutPrefill: mocks.getCheckoutPrefill, saveAddress: mocks.saveAddress }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));

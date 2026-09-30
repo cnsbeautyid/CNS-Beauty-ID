@@ -4,6 +4,7 @@ import { ROUTES } from "@/constants/routes";
 import { getSupabasePublicConfig } from "@/lib/env/client";
 import { createClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/services/auth/schemas";
+import { mergeGuestCart } from "@/services/cart/store";
 
 /** Email-confirmation landing: exchanges the PKCE code for a session cookie. */
 export async function GET(request: NextRequest) {
@@ -13,8 +14,11 @@ export async function GET(request: NextRequest) {
 
   if (code && getSupabasePublicConfig()) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL(next, origin));
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      await mergeGuestCart(supabase, data.user.id);
+      return NextResponse.redirect(new URL(next, origin));
+    }
     console.error("[auth] exchangeCodeForSession failed", error.code);
   }
 

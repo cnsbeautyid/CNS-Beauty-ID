@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { orderPath, ROUTES } from "@/constants/routes";
 import { getSessionUser } from "@/lib/auth/session";
 import { formatIDR } from "@/lib/utils/format";
-import { writeCart, readCart } from "@/services/cart/cookie";
+import { CartStoreError, readCart, writeCart } from "@/services/cart/store";
 import { EMPTY_CART } from "@/services/cart/model";
 import { quoteCart } from "@/services/cart/quote";
 import { quoteErrorMessage, type QuoteError } from "@/services/cart/quote-schema";
@@ -46,7 +46,13 @@ export async function placeOrderAction(values: CheckoutValues): Promise<Checkout
   if (!parsed.success) return fail("invalid", "Periksa kembali data pengiriman.");
   const input = parsed.data;
 
-  const cart = await readCart();
+  let cart;
+  try {
+    cart = await readCart();
+  } catch (error) {
+    if (!(error instanceof CartStoreError)) throw error;
+    return fail("error", "Keranjang belum dapat dimuat. Silakan coba lagi.");
+  }
   if (cart.items.length === 0) return fail("empty", "Keranjangmu kosong.");
 
   const quoted = await quoteCart(cart, user.id);
@@ -80,7 +86,8 @@ export async function placeOrderAction(values: CheckoutValues): Promise<Checkout
       break;
   }
 
-  await writeCart(EMPTY_CART);
+  // The order exists now; failing to clear the cart must not hide that.
+  await writeCart(EMPTY_CART).catch((error: unknown) => console.error("[checkout] clearing the cart failed", error));
   if (input.saveAddress) await saveAddress(user.id, input.shipping, prefill.addresses);
   revalidatePath(ROUTES.cart);
   redirect(orderPath(result.orderNumber));

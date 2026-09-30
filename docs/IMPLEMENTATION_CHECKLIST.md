@@ -13,7 +13,7 @@
 - [x] Checkout (Phase 7 — login required, manual bank transfer, proof upload, expiry cron)
 - [x] Order (Phase 7 — order detail page; order list in Phase 8)
 - [ ] Basic AI
-- [ ] Account
+- [x] Account (Phase 8 — dashboard, orders + reorder, wishlist, profile & addresses, DB cart after login)
 - [ ] Admin catalog/order
 
 ## P1

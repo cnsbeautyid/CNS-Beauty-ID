@@ -27,6 +27,21 @@ type CartViewProps = {
 
 /** Every amount shown here comes from the backend quote; nothing is computed. */
 export function CartView({ cart, result, products, whatsapp }: CartViewProps) {
+  if (result.status === "error") {
+    return (
+      <Shell>
+        <ErrorState
+          description="Keranjang belum dapat dimuat. Silakan coba lagi dalam beberapa saat."
+          action={
+            <ButtonLink href={ROUTES.cart} variant="secondary">
+              Coba lagi
+            </ButtonLink>
+          }
+        />
+      </Shell>
+    );
+  }
+
   if (cart.items.length === 0) {
     return (
       <Shell>
@@ -39,21 +54,6 @@ export function CartView({ cart, result, products, whatsapp }: CartViewProps) {
               <ButtonLink href={ROUTES.products}>Jelajahi Produk</ButtonLink>
               <AskAIButton>Tanya CNS Beauty AI</AskAIButton>
             </div>
-          }
-        />
-      </Shell>
-    );
-  }
-
-  if (result.status === "error") {
-    return (
-      <Shell>
-        <ErrorState
-          description="Keranjang belum dapat dimuat. Silakan coba lagi dalam beberapa saat."
-          action={
-            <ButtonLink href={ROUTES.cart} variant="secondary">
-              Coba lagi
-            </ButtonLink>
           }
         />
       </Shell>

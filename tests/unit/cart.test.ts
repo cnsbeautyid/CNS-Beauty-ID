@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   addItem,
+  cartFromRows,
+  diffCartRows,
+  mergeCarts,
   couponCodeSchema,
   EMPTY_CART,
   itemCount,
@@ -161,5 +164,35 @@ describe("quoteErrorMessage", () => {
   it("classifies coupon errors", () => {
     expect(COUPON_ERROR_CODES.has("coupon_expired")).toBe(true);
     expect(COUPON_ERROR_CODES.has("out_of_stock")).toBe(false);
+  });
+});
+
+describe("database carts", () => {
+  const row = (id: string, product: string, quantity: number, variant: string | null = null) => ({ id, product_id: product, variant_id: variant, quantity });
+
+  it("builds a cart from rows, merging duplicates and validating the coupon", () => {
+    const cart = cartFromRows([row("a", P1, 2), row("b", P1, 3), row("c", P1, 1, V1)], " hemat10 ");
+    expect(cart).toEqual({ v: 1, items: [{ p: P1, q: 5 }, { p: P1, v: V1, q: 1 }], coupon: "HEMAT10" });
+    expect(cartFromRows([], "HEMAT10")).toEqual(EMPTY_CART);
+    expect(cartFromRows([row("a", P1, 1)], "bad code!").coupon).toBeUndefined();
+    expect(cartFromRows([row("a", P1, 500)], null).items[0]?.q).toBe(MAX_QUANTITY);
+  });
+
+  it("merges the guest cart into the account cart", () => {
+    const account: CartState = { v: 1, items: [{ p: P1, q: 1 }], coupon: "LAMA" };
+    const guest: CartState = { v: 1, items: [{ p: P1, q: 2 }, { p: P2, q: 1 }], coupon: "BARU" };
+    expect(mergeCarts(account, guest)).toEqual({ v: 1, items: [{ p: P1, q: 3 }, { p: P2, q: 1 }], coupon: "BARU" });
+    expect(mergeCarts(account, { v: 1, items: [{ p: P2, q: 1 }] }).coupon).toBe("LAMA");
+  });
+
+  it("computes minimal row changes", () => {
+    const existing = [row("a", P1, 1), row("b", P1, 1), row("c", P2, 4), row("d", P1, 2, V1)];
+    const desired: CartState = { v: 1, items: [{ p: P1, q: 3 }, { p: P2, q: 4 }, { p: uuid(9), q: 1 }] };
+    expect(diffCartRows(existing, desired)).toEqual({
+      deleteIds: ["b", "d"],
+      updates: [{ id: "a", quantity: 3 }],
+      inserts: [{ product_id: uuid(9), variant_id: null, quantity: 1 }],
+    });
+    expect(diffCartRows(existing, EMPTY_CART).deleteIds).toEqual(["a", "b", "c", "d"]);
   });
 });

@@ -1,5 +1,8 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
+
+import { ROUTES } from "@/constants/routes";
 import { getSupabasePublicConfig } from "@/lib/env/client";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,4 +24,11 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data || typeof data.claims.sub !== "string") return null;
   return { id: data.claims.sub, email: typeof data.claims.email === "string" ? data.claims.email : null };
+}
+
+/** Server Components: the signed-in user, or a redirect to sign-in that returns to `nextPath`. */
+export async function requireUser(nextPath: string): Promise<SessionUser> {
+  const user = await getSessionUser();
+  if (!user) redirect(`${ROUTES.signIn}?next=${encodeURIComponent(nextPath)}`);
+  return user;
 }
