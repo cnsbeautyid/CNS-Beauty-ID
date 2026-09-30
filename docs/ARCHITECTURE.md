@@ -2,9 +2,24 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 17)
-- **Current phase:** Phase 17 Beauty Concierge full page, done and validated
-- **Next phase:** Phase 18
+- **Last updated:** 2026-09-30 (Phase 18)
+- **Current phase:** Phase 18 Analytics retention, done and validated
+- **Next phase:** Phase 19 (realigning with the master prompt's list: SEO, Performance, Accessibility, E2E, Production hardening)
+
+## Phase 18 summary
+
+Owner decisions (2026-09-30): privacy limit plus long-term trends; raw events kept 180 days; long-term totals are events per day only; a trend section in admin. Spec: `docs/superpowers/specs/2026-09-30-analytics-retention-design.md`.
+
+- **`analytics_daily_events`** (migration `20261001010000_analytics_retention`, applied to live): WIB day × event name → events, unique visitors that day. No identifiers; kept indefinitely. RLS: admin `SELECT` only; only the service role writes.
+- **`analytics_rollup_and_purge(p_retention_days = 180)`** (`SECURITY DEFINER`, execute: service role only):
+  - Upserts totals from 2 days before the latest stored day, clamped to the purge boundary. The first run backfills everything.
+  - Deletes raw events in **whole WIB days** older than the retention period, and only days that have totals. Batches of 10,000, at most 100 per run.
+  - Rejects retention below 90 days.
+- **Nightly trigger:** `/api/cron/analytics-retention` (Vercel cron, 01:30 WIB), `CRON_SECRET` bearer check shared with `expire-orders` (`src/lib/auth/cron.ts`). It returns and logs `{ daysRolledUp, rowsUpserted, rowsDeleted }`, and 500 on failure; the next run catches up.
+- **Admin:** "Tren jangka panjang" on `/admin/analytics?tren=3|6|12`: weekly SVG lines (page-view and order visitors), a monthly table with conversion. Visitors are summed per day, and the caption says so.
+- **Privacy page:** states the 180-day limit (legal review by the owner still pending).
+- **Verified on live** in a rolled-back transaction: WIB day boundaries, idempotent re-runs, first-run backfill before purge (this check caught `greatest()` ignoring NULLs, which would have skipped the backfill; fixed before applying), whole-day purge that never deletes a day without totals, the guard, privileges, and staff/customer RLS. Security advisors: nothing new.
+- **Not covered by E2E:** the admin trend section (the suite never signs in). Covered by `buildTrend` unit tests and the cron route integration tests.
 
 ## Phase 17 summary
 
@@ -78,7 +93,7 @@ Owner decisions (2026-09-30): a full-page chat (not a landing page or guided flo
 - **Also fixed:** a staff-path check that was a prefix match (`/admin-x` counted as `/admin`) is now segment-based.
 - **Not yet:**
   - `REVIEW_CREATED` has no emitter (there is no review form yet).
-  - Retention/aggregation of raw events (Phase 18).
+  - Retention/aggregation of raw events: done in Phase 18.
   - A shared rate-limit store (Phase 21).
 
 ## Phase 15 summary
@@ -787,3 +802,4 @@ Follow master prompt §26, with these gates:
 | 15 | pass | pass | 182/182 (incl. admin model, admin action authorization/audit integration) | pass | 231 pass, 13 skipped; 4 failed on `ConnectTimeoutError` / slow responses from the live Supabase during the run (cart/catalog specs untouched by Phase 15; they passed in the previous run and in isolation). All 28 new admin E2E pass (14 tests × 2 devices) |
 | 16 | pass | pass | 209/209 (incl. analytics model/contract, ingest route, server recorder, event emitters in checkout/quiz/reorder) | pass | 251 pass, 13 skipped, 0 failed (incl. 14 new analytics E2E + privacy page a11y) |
 | 17 | pass | pass | 251/251 (incl. conversation persistence, hydration gate, owner key, image filter, session state, rail model, concierge page type) | pass | 266 pass, 16 skipped, 0 failed (incl. 16 concierge-page E2E: inline stream, reload/panel continuity, one chat surface, rail chips, composer above the fold, mobile/desktop layout, no-JS content, axe) |
+| 18 | pass | pass | 268/268 (incl. trend model, cron auth, retention cron route integration) | pass | 262 pass, 16 skipped; 4 `layout.spec` design-preview specs failed only because the manually started server lacked `ENABLE_DESIGN_PREVIEW=true` (Playwright's own webServer sets it); rerun with it: `layout.spec` 27 pass. Incl. privacy-page retention sentence + axe. SQL verified on live in rolled-back transactions (6 checks + RLS) |
