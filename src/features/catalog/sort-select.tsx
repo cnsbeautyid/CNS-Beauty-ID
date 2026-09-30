@@ -4,7 +4,8 @@ import { ChevronDown } from "lucide-react";
 import Form from "next/form";
 import { useId } from "react";
 
-import { SORT_OPTIONS, type CatalogQuery } from "@/services/catalog/query";
+import { SORT_OPTIONS } from "@/services/catalog/options";
+import type { CatalogQuery } from "@/services/catalog/query";
 
 type SortSelectProps = { basePath: string; query: CatalogQuery };
 

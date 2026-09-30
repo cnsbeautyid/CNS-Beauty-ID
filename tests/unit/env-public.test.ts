@@ -32,3 +32,11 @@ describe("shared AI modules", () => {
     }
   });
 });
+
+describe("catalog client components", () => {
+  it("take their option lists from the Zod-free options module", () => {
+    const source = readFileSync("src/features/catalog/sort-select.tsx", "utf8");
+    expect(source).not.toMatch(/^import \{[^}]*\bSORT_OPTIONS\b[^}]*\} from "@\/services\/catalog\/query"/m);
+    expect(readFileSync("src/services/catalog/options.ts", "utf8")).not.toMatch(/from "zod/);
+  });
+});
