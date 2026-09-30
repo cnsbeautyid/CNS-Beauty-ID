@@ -22,3 +22,13 @@ describe("public env parsing", () => {
     );
   });
 });
+
+describe("shared AI modules", () => {
+  it("use zod/mini, not the full Zod bundle", () => {
+    for (const file of ["src/services/ai/protocol.ts", "src/stores/ai-persistence.ts"]) {
+      const source = readFileSync(file, "utf8");
+      expect(source).toMatch(/from "zod\/mini"/);
+      expect(source).not.toMatch(/from "zod";/);
+    }
+  });
+});

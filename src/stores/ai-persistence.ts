@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 import type { StateStorage } from "zustand/middleware";
 
 import { getSupabasePublicConfig } from "@/lib/env/client";
@@ -25,19 +25,19 @@ export type PersistedConversation = {
 };
 
 const messageSchema = z.object({
-  id: z.string().max(64),
+  id: z.string().check(z.maxLength(64)),
   role: z.enum(["user", "assistant"]),
-  content: z.string().max(20_000),
-  products: z.array(productCardSchema).max(MAX_STORED_PRODUCTS),
+  content: z.string().check(z.maxLength(20_000)),
+  products: z.array(productCardSchema).check(z.maxLength(MAX_STORED_PRODUCTS)),
   // Rendered as a link: only https, so a tampered value can't become javascript:.
-  handoffUrl: z.string().regex(/^https:\/\//).nullable().optional(),
+  handoffUrl: z.optional(z.nullable(z.string().check(z.regex(/^https:\/\//)))),
   state: z.enum(["streaming", "done", "error", "unavailable"]),
 });
 
 const persistedSchema = z.object({
-  conversationId: z.uuid().nullable(),
-  ownerKey: z.string().max(32).nullable().optional(),
-  messages: z.array(messageSchema).max(MAX_HISTORY),
+  conversationId: z.nullable(z.uuid()),
+  ownerKey: z.optional(z.nullable(z.string().check(z.maxLength(32)))),
+  messages: z.array(messageSchema).check(z.maxLength(MAX_HISTORY)),
 });
 
 export function toPersisted(state: PersistedConversation): PersistedConversation {

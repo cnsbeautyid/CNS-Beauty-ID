@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 
 // Wire protocol between /api/ai/chat and the concierge panel (SSE). Shared by
 // server and client; contains no secrets and no provider details.
@@ -33,18 +33,18 @@ export const productCardSchema = z.object({
   slug: z.string(),
   name: z.string(),
   price: z.number(),
-  compareAtPrice: z.number().optional(),
+  compareAtPrice: z.optional(z.number()),
   available: z.boolean(),
-  imageUrl: z.string().optional(),
-  shortDescription: z.string().optional(),
+  imageUrl: z.optional(z.string()),
+  shortDescription: z.optional(z.string()),
 });
 
 const eventSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("meta"), conversationId: z.string().nullable() }),
+  z.object({ type: z.literal("meta"), conversationId: z.nullable(z.string()) }),
   z.object({ type: z.literal("status"), label: z.string() }),
   z.object({ type: z.literal("text"), delta: z.string() }),
   z.object({ type: z.literal("products"), items: z.array(productCardSchema) }),
-  z.object({ type: z.literal("handoff"), url: z.string().nullable() }),
+  z.object({ type: z.literal("handoff"), url: z.nullable(z.string()) }),
   z.object({ type: z.literal("unavailable"), message: z.string() }),
   z.object({ type: z.literal("error"), message: z.string() }),
   z.object({ type: z.literal("done") }),
@@ -83,20 +83,22 @@ export const MAX_HISTORY = 20;
 export const MAX_MESSAGE_LENGTH = 2000;
 
 export const chatRequestSchema = z.object({
-  conversationId: z.uuid().optional(),
+  conversationId: z.optional(z.uuid()),
   messages: z
-    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH) }))
-    .min(1)
-    .max(MAX_HISTORY)
-    .refine((messages) => messages.at(-1)?.role === "user", "The last message must come from the user."),
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().check(z.trim(), z.minLength(1), z.maxLength(MAX_MESSAGE_LENGTH)) }))
+    .check(
+      z.minLength(1),
+      z.maxLength(MAX_HISTORY),
+      z.refine((messages) => messages.at(-1)?.role === "user", "The last message must come from the user."),
+    ),
   // Context only, never authorization: the server resolves identity itself.
-  pageContext: z
-    .object({
+  pageContext: z.optional(
+    z.object({
       pageType: z.enum(PAGE_TYPES),
-      productSlug: z.string().regex(/^[a-z0-9-]{1,80}$/).optional(),
-      productName: z.string().max(120).optional(),
-    })
-    .optional(),
+      productSlug: z.optional(z.string().check(z.regex(/^[a-z0-9-]{1,80}$/))),
+      productName: z.optional(z.string().check(z.maxLength(120))),
+    }),
+  ),
 });
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
