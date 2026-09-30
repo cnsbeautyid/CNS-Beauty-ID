@@ -98,11 +98,15 @@ export default async function AccountDashboardPage() {
 
       <Panel icon={<Sparkles {...ICON} />} title="Rekomendasi untukmu">
         <p className="text-body-s text-text-secondary">
-          Ceritakan kondisi kulitmu kepada CNS Beauty AI untuk rekomendasi produk. Profil kulit dan rutinitas pribadi hadir bersama Skin
-          Quiz.
+          Ikuti Skin Quiz untuk profil kulit dan rutinitas yang disarankan, atau ceritakan kondisi kulitmu kepada CNS Beauty AI.
         </p>
-        <div>
-          <AskAIButton prefill="Produk apa yang cocok untuk kulit saya?">Tanya Beauty AI</AskAIButton>
+        <div className="flex flex-wrap gap-3">
+          <ButtonLink href={ROUTES.skinQuiz} variant="secondary" size="sm">
+            Skin Quiz
+          </ButtonLink>
+          <AskAIButton size="sm" prefill="Produk apa yang cocok untuk kulit saya?">
+            Tanya Beauty AI
+          </AskAIButton>
         </div>
       </Panel>
     </div>

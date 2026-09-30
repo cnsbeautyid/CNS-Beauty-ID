@@ -7,12 +7,13 @@ import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils/cn";
 import { isActivePath } from "@/lib/utils/nav";
 
-// Loyalty, Skin Profile and Routine join this list in their own phases
-// (13, 11, 12); links to pages that don't exist yet are not shown.
+// Loyalty and Routine join this list in their own phases (13, 12); links to
+// pages that don't exist yet are not shown.
 const ITEMS = [
   { href: ROUTES.account.dashboard, label: "Ringkasan", exact: true },
   { href: ROUTES.account.orders, label: "Pesanan", exact: false },
   { href: ROUTES.account.wishlist, label: "Wishlist", exact: false },
+  { href: ROUTES.account.skinProfile, label: "Profil Kulit", exact: false },
   { href: ROUTES.account.settings, label: "Pengaturan", exact: false },
 ] as const;
 
