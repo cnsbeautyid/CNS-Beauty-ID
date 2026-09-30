@@ -25,15 +25,18 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 // md/lg meet the 44px touch target; sm is for dense, non-primary contexts.
+// Minimum heights (not fixed) so a label that can't fit on a narrow screen
+// wraps instead of pushing the layout sideways (WCAG 1.4.10). Single-line
+// labels keep exactly these heights.
 const SIZES: Record<ButtonSize, string> = {
-  sm: "h-9 px-4 text-body-s",
-  md: "h-11 px-6 text-body-s",
-  lg: "h-13 px-8 text-body",
+  sm: "min-h-9 px-4 py-1 text-body-s",
+  md: "min-h-11 px-6 py-2 text-body-s",
+  lg: "min-h-13 px-8 py-2 text-body",
 };
 
 export function buttonClassName({ variant = "primary", size = "md", fullWidth }: StyleProps = {}) {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-md font-medium tracking-wide whitespace-nowrap",
+    "inline-flex max-w-full items-center justify-center gap-2 rounded-md text-center font-medium tracking-wide",
     "transition-colors duration-(--duration-base) ease-standard",
     "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
     VARIANTS[variant],
