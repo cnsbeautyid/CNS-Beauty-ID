@@ -19,13 +19,13 @@ export const BRAND = {
 } as const;
 
 // Header order follows master prompt §5.
+// Artikel (/artikel) and Paket (/paket) return once those pages exist.
 export const PRIMARY_NAV: readonly NavItem[] = [
   { label: "Beranda", href: ROUTES.home },
   { label: "Produk", href: ROUTES.products },
   { label: "Tentang Kami", href: ROUTES.about },
   { label: "Manfaat", href: ROUTES.benefits },
   { label: "Testimoni", href: ROUTES.testimonials },
-  { label: "Artikel", href: ROUTES.journal },
   { label: "Kontak", href: ROUTES.contact },
 ];
 
@@ -34,7 +34,6 @@ export const FOOTER_NAV: readonly { title: string; items: readonly NavItem[] }[]
     title: "Belanja",
     items: [
       { label: "Semua Produk", href: ROUTES.products },
-      { label: "Paket Perawatan", href: ROUTES.bundles },
       { label: "Skin Quiz", href: ROUTES.skinQuiz },
       { label: "Beauty Concierge", href: ROUTES.beautyConcierge },
     ],
@@ -45,7 +44,6 @@ export const FOOTER_NAV: readonly { title: string; items: readonly NavItem[] }[]
       { label: "Tentang Kami", href: ROUTES.about },
       { label: "Manfaat", href: ROUTES.benefits },
       { label: "Testimoni", href: ROUTES.testimonials },
-      { label: "Artikel", href: ROUTES.journal },
     ],
   },
   {
