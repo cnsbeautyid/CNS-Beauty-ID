@@ -2,9 +2,26 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 18)
-- **Current phase:** Phase 18 Analytics retention, done and validated
-- **Next phase:** Phase 19 (realigning with the master prompt's list: SEO, Performance, Accessibility, E2E, Production hardening)
+- **Last updated:** 2026-10-01 (Phase 19)
+- **Current phase:** Phase 19 SEO, done and validated
+- **Next phase:** Phase 20 Performance (then Accessibility, E2E, Production hardening per the master prompt)
+
+## Phase 19 summary
+
+Owner decisions (2026-10-01): technical SEO plus `/faq` and `/kontak`; a branded default share image; Artikel and Paket hidden until built. Spec: `docs/superpowers/specs/2026-10-01-seo-design.md`.
+
+- **`/robots.txt`** (`buildRobots`): indexable only when `VERCEL_ENV === "production"`; private areas disallowed; preview and local builds disallow everything. **If the site leaves Vercel, change the production signal.**
+- **`/sitemap.xml`** (`buildSitemap`, hourly): the fixed public pages, visible categories, and active products (paged past the 1000-row cap) with `lastModified` and image. `/testimoni` and `/faq` are listed only with content. Falls back to the fixed pages when the catalog can't be read.
+- **Share previews:** root Open Graph (`siteName`, `id_ID`) and Twitter `summary_large_image`; a default 1200×630 card (`opengraph-image.tsx`, Cormorant Garamond 600, OFL, in `src/assets/fonts`). Product pages keep their photo.
+- **Canonicals** on every indexable page; newly added on `/`, `/manfaat`, `/tentang-kami`, `/testimoni`, `/faq`, `/kontak`.
+- **JSON-LD** (`src/lib/seo/structured-data.ts`):
+  - `Organization` and `WebSite` (search → `/produk?q=`) on the home page. `sameAs` comes only from verified `SOCIAL_LINKS` (empty today).
+  - `BreadcrumbList` on products, categories, `/faq` and `/kontak`.
+  - `FAQPage` from exactly the rendered approved FAQs.
+  - The product `aggregateRating` only appears with reviews.
+- **`/faq`:** approved FAQs by topic, keyboard `<details>`, plain-text answers; `noindex` when empty or failing. **`/kontak`:** WhatsApp, Instagram, email and city from `settings.contact`, plus Beauty AI.
+- **Nav:** Artikel and Paket are hidden until those pages exist.
+- **Owner:** submit `/sitemap.xml` in Google Search Console after the production deploy.
 
 ## Phase 18 summary
 
@@ -803,3 +820,4 @@ Follow master prompt §26, with these gates:
 | 16 | pass | pass | 209/209 (incl. analytics model/contract, ingest route, server recorder, event emitters in checkout/quiz/reorder) | pass | 251 pass, 13 skipped, 0 failed (incl. 14 new analytics E2E + privacy page a11y) |
 | 17 | pass | pass | 251/251 (incl. conversation persistence, hydration gate, owner key, image filter, session state, rail model, concierge page type) | pass | 266 pass, 16 skipped, 0 failed (incl. 16 concierge-page E2E: inline stream, reload/panel continuity, one chat surface, rail chips, composer above the fold, mobile/desktop layout, no-JS content, axe) |
 | 18 | pass | pass | 268/268 (incl. trend model, cron auth, retention cron route integration) | pass | 262 pass, 16 skipped; 4 `layout.spec` design-preview specs failed only because the manually started server lacked `ENABLE_DESIGN_PREVIEW=true` (Playwright's own webServer sets it); rerun with it: `layout.spec` 27 pass. Incl. privacy-page retention sentence + axe. SQL verified on live in rolled-back transactions (6 checks + RLS) |
+| 19 | pass | pass | 287/287 (incl. robots/sitemap/JSON-LD builders, sitemap + FAQ readers) | pass | 281 pass, 16 skipped; 3 failed on test expectations (header spec still listed Artikel; home canonical is the bare origin), both fixed → `seo.spec` + `layout.spec` 45 pass. Screenshots: `/faq`, `/kontak`, share card |

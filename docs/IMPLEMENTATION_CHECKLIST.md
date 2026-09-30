@@ -28,6 +28,7 @@
 - [x] Reseller AI (Phase 14 — partner mode with partner price/sales tools, no commission)
 - [x] Advanced analytics (Phase 16: event contract v1, server-only ingestion, funnels, conversion KPI, privacy page)
 - [x] Analytics retention (Phase 18: 180-day raw events, anonymous daily totals, admin trend)
+- [x] SEO (Phase 19: robots, sitemap, share image, canonicals, JSON-LD, /faq, /kontak)
 
 ## P2
 - [ ] Voice AI
