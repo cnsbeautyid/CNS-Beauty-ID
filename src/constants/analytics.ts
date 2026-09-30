@@ -90,3 +90,6 @@ export const ANALYTICS_EVENT_LABELS: Record<AnalyticsEventName, string> = {
 /** First-party anonymous visitor id (shared with the Beauty Concierge). */
 export const ANONYMOUS_ID_COOKIE = "cns_aid";
 export const ANONYMOUS_ID_MAX_AGE = 60 * 60 * 24 * 365;
+
+/** Raw events older than this (whole WIB days) are deleted nightly; daily totals stay. */
+export const ANALYTICS_RETENTION_DAYS = 180;
