@@ -29,21 +29,23 @@ export default function BeautyConciergePage() {
     <main id="main-content">
       <ConciergePageContext />
       <Container className="py-8 desktop:py-12">
-        <div className="max-w-2xl">
-          <p className="text-caption tracking-eyebrow text-brand-cocoa uppercase">CNS Beauty AI</p>
-          <h1 className="mt-3 text-h1 text-brand-cocoa-dark">Beauty Concierge</h1>
-          <p className="mt-3 text-body text-text-secondary">
-            Ceritakan kebutuhan kulitmu, dan Beauty AI membantu menemukan produk serta rutinitas CNS Beauty yang sesuai. Beauty AI
-            memberi saran perawatan, bukan diagnosis medis.
-          </p>
-        </div>
-
-        <div className="mt-8 grid gap-6 desktop:grid-cols-3 desktop:items-start">
-          <aside aria-label="Profil kecantikanmu" className="desktop:sticky desktop:top-24">
-            <Suspense fallback={<ConciergeRailSkeleton />}>
-              <ConciergeRail />
-            </Suspense>
-          </aside>
+        {/* Desktop: intro and rail share the left column so the chat starts at the top and its input is visible without scrolling. */}
+        <div className="grid gap-6 desktop:grid-cols-3 desktop:items-start desktop:gap-8">
+          <div className="flex flex-col gap-6 desktop:sticky desktop:top-24">
+            <div className="max-w-2xl">
+              <p className="text-caption tracking-eyebrow text-brand-cocoa uppercase">CNS Beauty AI</p>
+              <h1 className="mt-3 text-h1 text-brand-cocoa-dark">Beauty Concierge</h1>
+              <p className="mt-3 text-body text-text-secondary">
+                Ceritakan kebutuhan kulitmu, dan Beauty AI membantu menemukan produk serta rutinitas CNS Beauty yang sesuai. Beauty AI
+                memberi saran perawatan, bukan diagnosis medis.
+              </p>
+            </div>
+            <aside aria-label="Profil kecantikanmu">
+              <Suspense fallback={<ConciergeRailSkeleton />}>
+                <ConciergeRail />
+              </Suspense>
+            </aside>
+          </div>
           <div className="min-w-0 desktop:col-span-2">
             <ConciergeChat />
           </div>

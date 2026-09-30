@@ -259,6 +259,8 @@ test.describe("Beauty Concierge page", () => {
     const railBox = await rail.boundingBox();
     const chatBox = await page.getByRole("region", { name: "CNS Beauty AI" }).boundingBox();
     expect(railBox!.x + railBox!.width).toBeLessThanOrEqual(chatBox!.x);
+    // The composer is reachable without scrolling.
+    await expect(page.getByRole("region", { name: "CNS Beauty AI" }).getByRole("textbox")).toBeInViewport();
   });
 
   test("has no WCAG 2.2 AA violations", async ({ page }) => {

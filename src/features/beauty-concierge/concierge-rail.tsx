@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 import { ButtonLink } from "@/components/ui/button";
@@ -33,8 +34,11 @@ export async function ConciergeRail() {
   const model = await loadRailModel();
   return (
     <>
-      <details className="rounded-lg border border-border bg-surface desktop:hidden">
-        <summary className="flex min-h-11 cursor-pointer items-center px-4 text-body-s font-medium">{model.summary}</summary>
+      <details className="group rounded-lg border border-border bg-surface desktop:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 text-body-s font-medium [&::-webkit-details-marker]:hidden">
+          {model.summary}
+          <ChevronDown aria-hidden className="size-4 text-text-secondary transition-transform duration-(--duration-base) group-open:rotate-180 motion-reduce:transition-none" />
+        </summary>
         <div className="border-t border-border p-4">
           <RailBody model={model} />
         </div>
