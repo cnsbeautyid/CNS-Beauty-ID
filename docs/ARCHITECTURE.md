@@ -2,9 +2,41 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 13)
-- **Current phase:** Phase 13 Loyalty (CNS Rewards), done and validated
-- **Next phase:** Phase 14 Reseller
+- **Last updated:** 2026-09-30 (Phase 14)
+- **Current phase:** Phase 14 Reseller (partner programme and portal), done and validated
+- **Next phase:** Phase 15
+
+## Phase 14 summary
+
+**Business model, as it exists in the live DB:** partner *pricing*, not commission. `wholesale_prices` holds 10 rows: per product, 4 reseller levels with a minimum quantity each, plus a dropship price. `quote_cart` applies the partner's own level price automatically, rejects lines below `min_qty`, and refuses coupons and points for partners. There is no commission, customer or marketing data, so those portal sections were not built and nothing is invented; `ROUTES.resellerPortal.{customers,commission,marketing}` stay unlinked.
+
+- **`/reseller`**: a public, indexable programme page (metadata and canonical URL). It covers the two partnership types, how to join, and notes. It shows no partner prices (those are RLS partner-only) and promises no earnings. The copy is DRAFT in `content/reseller.ts`.
+  - The application area depends on who is visiting:
+    - Guests get a sign-in or sign-up CTA (`?next=/reseller`).
+    - Partners get a link to the portal.
+    - Pending applicants see their status.
+    - Everyone else gets the form (RHF + Zod `applicationSchema`; dropshipper is forced to level 1).
+  - `submitApplicationAction` takes the user from the session and never accepts status, reviewer or user id from the browser. It refuses duplicates (already a partner, or a pending application). RLS `own_insert_reseller_applications` accepts only the caller's own pending, unreviewed row. Approval happens in the back office; the app never writes `partner_accounts`.
+- **`/reseller-portal`** (noindex): each page calls `requirePartner(path)`, which redirects guests to sign in and then reads the caller's active `partner_accounts` row through RLS. Anyone who isn't an active partner sees a "Portal khusus partner" notice linking to `/reseller`.
+  - *Ringkasan*: paid purchase total, paid and pending order counts, a 6-month bar chart (Asia/Jakarta months, with a screen-reader text per month) and the most-bought products. All figures come from the partner's own orders where `partner_type` is not null.
+  - *Produk & Harga*: price list for their own type and level (`wholesale_prices` RLS). It shows retail price, partner price, minimum quantity, and the per-unit difference from retail (labelled "bukan jaminan keuntungan"). All levels sit in a `<details>` table. Add to cart uses the minimum quantity (`AddToCartButton` gained a `quantity` prop). A level whose minimum is above the cart's 99-per-line cap shows a "hubungi tim" note instead.
+  - *Pesanan*: the partner orders, reusing `OrderList`.
+  - *Asisten AI*: a CTA and quick-action chips that open the concierge.
+- **Concierge partner mode:** only for a signed-in user on a `reseller` page whose active partner row the route has verified. `pageType` from the browser is a hint, not authority.
+  - That user gets `PARTNER_TOOLS`, which adds `get_partner_prices` and `get_partner_sales_summary` to the customer tools. Both tools re-check the partner row on every call.
+  - A partner note tells the model:
+    - Prices come only from the tools.
+    - The programme has no commission; never mention or compute commission, bonuses or income targets.
+    - Promotional copy may use only approved product and knowledge text.
+  - `tools.ts` now builds registries with `buildRegistry()`.
+- **No migration.** Verified on the live DB inside a transaction that was rolled back:
+  - A non-partner sees 0 wholesale prices, and an active reseller sees only the 8 reseller rows (not dropship).
+  - A user can't insert an approved application, an application for another user, or their own partner account.
+  - A pending application for themselves is accepted.
+- **Owner items:**
+  - Approve partners in the back office.
+  - Level-4 minimum of 100 exceeds the cart's 99-per-line cap.
+  - Approve the programme copy.
 
 ## Phase 13 summary
 
@@ -629,3 +661,4 @@ Follow master prompt §26, with these gates:
 | 11 | pass | pass | 122/122 (incl. scoring + quiz action tests) | pass | 187 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Quiz E2E runs against the live catalog, incl. axe on quiz and results |
 | 12 | pass | pass | 133/133 (incl. routine model, routine actions, profile/routine AI tool) | pass | 189 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-in routine flows covered by integration tests + live RLS check |
 | 13 | pass | pass | 145/145 (incl. loyalty model, redeem action, checkout points, loyalty AI tool) | pass | 191 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Ledger lockdown verified on the live DB |
+| 14 | pass | pass | 161/161 (incl. reseller model, application action, partner AI tools) | pass | 207 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-out paths + axe on `/reseller`; partner RLS verified on the live DB |

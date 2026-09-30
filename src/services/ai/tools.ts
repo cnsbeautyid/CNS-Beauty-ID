@@ -15,6 +15,8 @@ import { getOwnOrder } from "@/services/order/order";
 import { getOwnBeautyProfile, getQuizOptions } from "@/services/quiz/quiz";
 import { getLoyaltyProgramme, getOwnLoyaltyAccount, listOwnTransactions } from "@/services/loyalty/loyalty";
 import { eventLabel, tierProgress } from "@/services/loyalty/model";
+import { PARTNER_TYPE_LABELS, summarizeSales } from "@/services/reseller/model";
+import { getOwnPartner, getPartnerPriceList, listPartnerOrders } from "@/services/reseller/reseller";
 import { getOwnRoutine } from "@/services/routine/routine";
 import { orderStatusInfo } from "@/services/order/status";
 import type { ProductCardData } from "@/types/product";
@@ -312,6 +314,76 @@ const getMyLoyalty: ToolSpec<z.ZodType<Record<string, never>>> = {
   },
 };
 
+// Partner-only tools. The route offers them only to a server-verified active
+// partner; each run re-checks the partner account (RLS) before reading prices.
+const NOT_PARTNER = json({ not_partner: true, message: "Fitur ini khusus partner CNS Beauty yang sudah disetujui." });
+
+const getPartnerPrices: ToolSpec<z.ZodType<{ query?: string }>> = {
+  description:
+    "Daftar harga partner milik partner yang sedang masuk akun: harga level partner, minimal pembelian, harga eceran, dan selisih per unit. Jangan menebak harga partner atau komisi.",
+  statusLabel: "Memeriksa harga partner…",
+  parameters: {
+    type: "object",
+    properties: { query: { type: "string", description: "Nama produk (opsional)" } },
+    additionalProperties: false,
+  },
+  input: z.object({ query: z.string().trim().max(100).optional() }),
+  async run(input, context) {
+    if (!context.userId) return { content: json({ requires_login: true }) };
+    const partner = await getOwnPartner();
+    if (partner === undefined) return { content: json({ error: "Data partner belum dapat dibaca saat ini." }) };
+    if (!partner) return { content: NOT_PARTNER };
+    const rows = await getPartnerPriceList(partner);
+    if (!rows) return { content: json({ error: "Harga partner belum dapat dibaca saat ini." }) };
+    const needle = input.query?.toLowerCase();
+    const matches = needle ? rows.filter((row) => row.name.toLowerCase().includes(needle)) : rows;
+    return {
+      content: json({
+        partner_type: PARTNER_TYPE_LABELS[partner.memberType],
+        partner_level: partner.tierLevel,
+        commission_program: false,
+        note: "Keuntungan partner berasal dari selisih harga partner dan harga jual. Tidak ada program komisi.",
+        products: matches.slice(0, 10).map((row) => ({
+          name: row.name,
+          retail_price: formatIDR(row.retailPrice),
+          available: row.available,
+          your_price: row.own ? formatIDR(row.own.unitPrice) : undefined,
+          your_min_qty: row.own?.minQty,
+          margin_per_unit_at_retail_price: row.marginPerUnit !== null ? formatIDR(row.marginPerUnit) : undefined,
+          levels: row.tiers.map((tier) => ({ level: tier.level, name: tier.name, min_qty: tier.minQty, price: formatIDR(tier.unitPrice) })),
+        })),
+        url: ROUTES.resellerPortal.products,
+      }),
+    };
+  },
+};
+
+const getPartnerSales: ToolSpec<z.ZodType<Record<string, never>>> = {
+  description: "Ringkasan pembelian partner yang sedang masuk akun: total pesanan partner yang sudah dibayar, jumlah pesanan, dan produk terlaris 6 bulan terakhir.",
+  statusLabel: "Merangkum pesanan partner…",
+  parameters: { type: "object", properties: {}, additionalProperties: false },
+  input: z.object({}).strict(),
+  async run(_input, context) {
+    if (!context.userId) return { content: json({ requires_login: true }) };
+    const partner = await getOwnPartner();
+    if (partner === undefined) return { content: json({ error: "Data partner belum dapat dibaca saat ini." }) };
+    if (!partner) return { content: NOT_PARTNER };
+    const orders = await listPartnerOrders();
+    if (!orders) return { content: json({ error: "Pesanan partner belum dapat dibaca saat ini." }) };
+    const summary = summarizeSales(orders);
+    return {
+      content: json({
+        paid_orders: summary.paidOrders,
+        pending_payment_orders: summary.pendingOrders,
+        paid_purchase_total: formatIDR(summary.purchaseTotal),
+        monthly_paid_purchases: summary.months.map((month) => ({ month: month.label, total: formatIDR(month.total) })),
+        top_products: summary.topProducts.map((product) => ({ name: product.name, quantity: product.quantity })),
+        url: ROUTES.resellerPortal.dashboard,
+      }),
+    };
+  },
+};
+
 const SPECS = {
   search_products: searchProducts,
   get_product: getProduct,
@@ -323,7 +395,12 @@ const SPECS = {
   get_my_loyalty: getMyLoyalty,
 } as const satisfies Record<string, ToolSpec<z.ZodType>>;
 
-export type ToolName = keyof typeof SPECS;
+const PARTNER_SPECS = { ...SPECS, get_partner_prices: getPartnerPrices, get_partner_sales_summary: getPartnerSales } as const satisfies Record<
+  string,
+  ToolSpec<z.ZodType>
+>;
+
+export type ToolName = keyof typeof PARTNER_SPECS;
 
 export type ToolRegistry = {
   definitions: LLMTool[];
@@ -331,28 +408,35 @@ export type ToolRegistry = {
   run(name: string, rawArguments: string, context: ToolContext): Promise<ToolOutcome>;
 };
 
-export const CONCIERGE_TOOLS: ToolRegistry = {
-  definitions: Object.entries(SPECS).map(([name, spec]) => ({
-    type: "function",
-    function: { name, description: spec.description, parameters: spec.parameters },
-  })),
-  statusLabel: (name) => (name in SPECS ? SPECS[name as ToolName].statusLabel : "Memproses…"),
-  async run(name, rawArguments, context) {
-    if (!(name in SPECS)) return { content: json({ error: `Tool tidak dikenal: ${name}` }) };
-    const spec = SPECS[name as ToolName] as ToolSpec<z.ZodType>;
-    let args: unknown;
-    try {
-      args = rawArguments.trim() ? JSON.parse(rawArguments) : {};
-    } catch {
-      return { content: json({ error: "INVALID_JSON: argumen tool tidak valid." }) };
-    }
-    const parsed = spec.input.safeParse(args);
-    if (!parsed.success) return { content: json({ error: "Argumen tool tidak valid.", issues: parsed.error.issues.map((issue) => issue.message) }) };
-    try {
-      return await spec.run(parsed.data, context);
-    } catch (error) {
-      console.error(`[ai] tool ${name} failed`, error);
-      return { content: json({ error: "Data belum dapat diakses saat ini." }) };
-    }
-  },
-};
+function buildRegistry(specs: Record<string, ToolSpec<z.ZodType>>): ToolRegistry {
+  return {
+    definitions: Object.entries(specs).map(([name, spec]) => ({
+      type: "function",
+      function: { name, description: spec.description, parameters: spec.parameters },
+    })),
+    statusLabel: (name) => specs[name]?.statusLabel ?? "Memproses…",
+    async run(name, rawArguments, context) {
+      const spec = Object.hasOwn(specs, name) ? specs[name] : undefined;
+      if (!spec) return { content: json({ error: `Tool tidak dikenal: ${name}` }) };
+      let args: unknown;
+      try {
+        args = rawArguments.trim() ? JSON.parse(rawArguments) : {};
+      } catch {
+        return { content: json({ error: "INVALID_JSON: argumen tool tidak valid." }) };
+      }
+      const parsed = spec.input.safeParse(args);
+      if (!parsed.success) return { content: json({ error: "Argumen tool tidak valid.", issues: parsed.error.issues.map((issue) => issue.message) }) };
+      try {
+        return await spec.run(parsed.data, context);
+      } catch (error) {
+        console.error(`[ai] tool ${name} failed`, error);
+        return { content: json({ error: "Data belum dapat diakses saat ini." }) };
+      }
+    },
+  };
+}
+
+export const CONCIERGE_TOOLS = buildRegistry(SPECS);
+
+/** Customer tools plus partner price/sales tools, for a server-verified active partner. */
+export const PARTNER_TOOLS = buildRegistry(PARTNER_SPECS);

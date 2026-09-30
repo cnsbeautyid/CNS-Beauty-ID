@@ -16,9 +16,11 @@ type AddToCartButtonProps = {
   fullWidth?: boolean;
   /** Hides the inline result message (e.g. in the compact mobile bar). */
   compact?: boolean;
+  /** Units to add, e.g. a partner's minimum order quantity. */
+  quantity?: number;
 };
 
-export function AddToCartButton({ productId, available, size = "lg", fullWidth, compact = false }: AddToCartButtonProps) {
+export function AddToCartButton({ productId, available, size = "lg", fullWidth, compact = false, quantity = 1 }: AddToCartButtonProps) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
   const setCartCount = useSetCartCount();
@@ -33,7 +35,7 @@ export function AddToCartButton({ productId, available, size = "lg", fullWidth, 
 
   const add = () =>
     startTransition(async () => {
-      const response = await addToCartAction({ productId, quantity: 1 });
+      const response = await addToCartAction({ productId, quantity });
       if (response.ok) setCartCount(response.count);
       setResult({ ok: response.ok, message: response.message ?? (response.ok ? "Ditambahkan ke keranjang." : "") });
     });
@@ -41,7 +43,7 @@ export function AddToCartButton({ productId, available, size = "lg", fullWidth, 
   return (
     <div className="flex flex-col gap-2">
       <Button size={size} fullWidth={fullWidth} loading={pending} onClick={add}>
-        {pending ? "Menambahkan…" : "Tambah ke Keranjang"}
+        {pending ? "Menambahkan…" : quantity > 1 ? `Tambah ${quantity} ke Keranjang` : "Tambah ke Keranjang"}
       </Button>
       <p role="status" className={compact ? "sr-only" : "min-h-5 text-body-s"}>
         {result && (

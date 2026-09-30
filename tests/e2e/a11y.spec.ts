@@ -28,6 +28,7 @@ test.describe("Accessibility (axe, WCAG 2.2 AA)", () => {
     "/cart",
     "/masuk",
     "/daftar",
+    "/reseller",
   ]) {
     test(`brand page ${path}`, async ({ page }) => {
       await page.goto(path);

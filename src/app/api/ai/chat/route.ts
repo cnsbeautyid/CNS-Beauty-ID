@@ -10,9 +10,11 @@ import { runConcierge } from "@/services/ai/concierge";
 import { isConciergeEnabled, logMessage, markEscalated, resolveConversation } from "@/services/ai/conversation";
 import { createLLMClient } from "@/services/ai/llm";
 import { chatRequestSchema, encodeEvent, type ConciergeEvent } from "@/services/ai/protocol";
-import { CONCIERGE_TOOLS } from "@/services/ai/tools";
+import { CONCIERGE_TOOLS, PARTNER_TOOLS } from "@/services/ai/tools";
 import { getCatalogFacets } from "@/services/catalog/products";
 import { getPublicContact } from "@/services/content/contact";
+import { PARTNER_TYPE_LABELS } from "@/services/reseller/model";
+import { getOwnPartner } from "@/services/reseller/reseller";
 
 export const dynamic = "force-dynamic";
 
@@ -83,15 +85,19 @@ export async function POST(request: NextRequest) {
         send({ type: "meta", conversationId });
         await logMessage(conversationId, { role: "user", content: messages.at(-1)?.content ?? "" });
 
+        // Partner mode only for a verified active partner on a partner page;
+        // pageType is a hint from the browser, the partner row is the authority.
+        const partner = user && pageContext?.pageType === "reseller" ? await getOwnPartner() : null;
         const facets = await getCatalogFacets();
         const startedAt = Date.now();
         const turn = runConcierge({
           llm,
-          tools: CONCIERGE_TOOLS,
+          tools: partner ? PARTNER_TOOLS : CONCIERGE_TOOLS,
           history: messages,
           pageContext,
           hints: { concerns: facets?.concerns ?? [], skinTypes: facets?.skinTypes ?? [] },
           context: { userId: user?.id ?? null },
+          partner: partner ? { typeLabel: PARTNER_TYPE_LABELS[partner.memberType], level: partner.tierLevel } : null,
           signal: request.signal,
         });
         let step = await turn.next();
