@@ -15,8 +15,5 @@ export const AI_COPY = {
   role: "Beauty Concierge",
   greeting:
     "Halo! Aku CNS Beauty AI. Ceritakan kebutuhan kulitmu, dan aku bantu temukan ritual perawatan yang tepat.",
-  // Shown until the concierge backend (Phase 9) is live.
-  unavailable:
-    "Beauty AI sedang kami siapkan dan belum dapat menjawab pertanyaan. Untuk saat ini, tim CNS Beauty siap membantu melalui halaman Kontak.",
   disclaimer: "Beauty AI memberi saran perawatan, bukan diagnosis medis.",
 } as const;

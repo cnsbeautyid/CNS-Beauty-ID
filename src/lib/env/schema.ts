@@ -45,6 +45,9 @@ export const clientEnvSchema = z.object({
 export const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: optionalString,
   LLM_API_KEY: optionalString,
+  // OpenAI-compatible chat completions gateway (owner decision, Phase 9).
+  LLM_BASE_URL: optionalUrl,
+  LLM_MODEL: optionalString,
   PAYMENT_SECRET: optionalString,
   WEBHOOK_SECRET: optionalString,
   ADMIN_SECRET: optionalString,

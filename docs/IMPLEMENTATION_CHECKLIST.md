@@ -12,7 +12,7 @@
 - [x] Cart (Phase 6 — guest cookie cart, backend quote_cart totals; DB cart after login in Phase 8)
 - [x] Checkout (Phase 7 — login required, manual bank transfer, proof upload, expiry cron)
 - [x] Order (Phase 7 — order detail page; order list in Phase 8)
-- [ ] Basic AI
+- [x] Basic AI (Phase 9 — streaming concierge via nara/agnes OpenAI-compatible gateway, controlled tools, logging, handoff; needs LLM_BASE_URL/LLM_API_KEY)
 - [x] Account (Phase 8 — dashboard, orders + reorder, wishlist, profile & addresses, DB cart after login)
 - [ ] Admin catalog/order
 
