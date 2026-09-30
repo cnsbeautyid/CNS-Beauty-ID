@@ -30,6 +30,7 @@
 - [x] Analytics retention (Phase 18: 180-day raw events, anonymous daily totals, admin trend)
 - [x] SEO (Phase 19: robots, sitemap, share image, canonicals, JSON-LD, /faq, /kontak)
 - [x] Performance (Phase 20: first-load JS 339–346 → 210–217 kB, TBT −80–97%, JS budget test, favicon 100 → 3.7 kB)
+- [x] Accessibility (Phase 21: WCAG 2.2 AA fixes — skip link, reflow at 320px, focus offsets; axe sweep + keyboard/reflow guards)
 
 ## P2
 - [ ] Voice AI
