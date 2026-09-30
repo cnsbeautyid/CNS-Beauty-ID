@@ -188,6 +188,7 @@ declare
   v_today date := (now() at time zone 'Asia/Jakarta')::date;
   v_yesterday date := v_today - 1;
   v_purge_before date;
+  v_latest date;
   v_from date;
   v_days integer := 0;
   v_upserted integer := 0;
@@ -200,12 +201,15 @@ begin
   end if;
   v_purge_before := v_today - p_retention_days;
 
-  -- Overlap recompute: the last 2 stored days, never reaching back past the
-  -- purge boundary (a purged day must not be rebuilt from what is left).
-  select greatest(max(d.day) - 2, v_purge_before) into v_from from public.analytics_daily_events d;
-  -- First run: backfill from the oldest raw event (nothing purged yet).
-  if v_from is null then
+  select max(d.day) into v_latest from public.analytics_daily_events d;
+  if v_latest is null then
+    -- First run: backfill from the oldest raw event (nothing purged yet).
     select (min(e.created_at) at time zone 'Asia/Jakarta')::date into v_from from public.analytics_events e;
+  else
+    -- Overlap recompute: the last 2 stored days, never reaching back past the
+    -- purge boundary (a purged day must not be rebuilt from what is left).
+    -- (greatest() ignores NULLs, so the empty case is handled above, not here.)
+    v_from := greatest(v_latest - 2, v_purge_before);
   end if;
 
   if v_from is not null and v_from <= v_yesterday then
