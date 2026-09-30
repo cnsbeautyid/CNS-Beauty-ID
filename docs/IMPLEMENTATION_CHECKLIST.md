@@ -24,8 +24,8 @@
 - [x] Loyalty (Phase 13 — CNS Rewards page, reward redemption, points at checkout, loyalty AI tool)
 - [ ] Beauty Concierge
 - [ ] Journal
-- [ ] Reseller Portal
-- [ ] Reseller AI
+- [x] Reseller Portal (Phase 14 — programme page + application, partner portal: dashboard, price list, orders)
+- [x] Reseller AI (Phase 14 — partner mode with partner price/sales tools, no commission)
 - [ ] Advanced analytics
 
 ## P2

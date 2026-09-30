@@ -35,8 +35,21 @@ Kebutuhan kulit yang tersedia untuk filter (slug): ${concerns}.
 Jenis kulit yang tersedia untuk filter (slug): ${skinTypes}.`;
 }
 
-/** Page context as a separate note, so the stable system prompt stays unchanged. */
-export function buildContextNote(context: ChatRequest["pageContext"]): string | null {
+/** Server-verified partner, never taken from the browser. */
+export type PartnerContext = { typeLabel: string; level: number };
+
+/**
+ * Page context as a separate note, so the stable system prompt stays unchanged.
+ * Partner mode is set by the server after checking partner_accounts.
+ */
+export function buildContextNote(context: ChatRequest["pageContext"], partner?: PartnerContext | null): string | null {
+  if (partner) {
+    return `Mode partner: pengguna adalah ${partner.typeLabel} CNS Beauty yang sudah disetujui (level ${partner.level}). Bantu mereka berjualan: jelaskan produk, susun ide caption atau pesan promosi, dan jawab pertanyaan harga partner.
+- Harga partner, minimal pembelian, dan selisih harga hanya dari get_partner_prices. Ringkasan pesanan partner hanya dari get_partner_sales_summary.
+- CNS Beauty memakai harga partner, bukan komisi. Jangan pernah menyebut atau menghitung komisi, bonus, atau target penghasilan.
+- Materi promosi hanya boleh memakai manfaat, kandungan, dan cara pakai dari get_product atau search_knowledge. Jangan menambah klaim, testimoni, atau janji hasil.
+- Selisih harga adalah selisih terhadap harga eceran CNS Beauty, bukan jaminan keuntungan.`;
+  }
   if (!context) return null;
   if (context.pageType === "product" && context.productSlug) {
     const name = context.productName ? ` "${context.productName}"` : "";

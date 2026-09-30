@@ -1,6 +1,6 @@
 import type { LLMClient } from "./llm";
 import type { LLMMessage, LLMStreamEvent } from "./openai-stream";
-import { buildContextNote, buildSystemPrompt, type CatalogHints } from "./prompt";
+import { buildContextNote, buildSystemPrompt, type CatalogHints, type PartnerContext } from "./prompt";
 import type { ChatRequest, ConciergeEvent } from "./protocol";
 import type { ToolContext, ToolRegistry } from "./tools";
 
@@ -23,6 +23,8 @@ export type ConciergeInput = {
   pageContext: ChatRequest["pageContext"];
   hints: CatalogHints;
   context: ToolContext;
+  /** Set by the server only after verifying an active partner account. */
+  partner?: PartnerContext | null;
   signal?: AbortSignal;
 };
 
@@ -41,7 +43,7 @@ export type ConciergeResult = {
  * product cards and handoff links from tool data, never from model text.
  */
 export async function* runConcierge(input: ConciergeInput): AsyncGenerator<ConciergeEvent, ConciergeResult> {
-  const note = buildContextNote(input.pageContext);
+  const note = buildContextNote(input.pageContext, input.partner);
   const messages: LLMMessage[] = [
     { role: "system", content: buildSystemPrompt(input.hints) },
     ...(note ? [{ role: "system" as const, content: note }] : []),
