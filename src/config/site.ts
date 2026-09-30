@@ -54,6 +54,7 @@ export const FOOTER_NAV: readonly { title: string; items: readonly NavItem[] }[]
       { label: "FAQ", href: ROUTES.faq },
       { label: "Kontak", href: ROUTES.contact },
       { label: "Jadi Reseller", href: ROUTES.resellerProgram },
+      { label: "Kebijakan Privasi", href: ROUTES.privacy },
     ],
   },
 ];

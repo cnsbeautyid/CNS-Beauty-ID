@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox, RadioGroup } from "@/components/ui/choice";
 import { LoadingState } from "@/components/ui/states";
+import { track } from "@/lib/analytics/client";
 import { BUDGET_OPTIONS, GOAL_OPTIONS, MAX_CONCERNS, SENSITIVITY_OPTIONS, UNSURE_SKIN_TYPE, type QuizAnswers } from "@/services/quiz/schema";
 import { useQuizStore, type QuizDraft } from "@/stores/quiz-store";
 
@@ -69,6 +70,7 @@ export function QuizFlow({ options }: { options: QuizFlowOptions }) {
   const spec = STEPS[step] ?? STEPS[0]!;
   const last = step === STEPS.length - 1;
   const go = (next: number) => {
+    if (step === 0 && next === 1) track("SKIN_QUIZ_STARTED");
     moved.current = true;
     setError(undefined);
     setStep(next);

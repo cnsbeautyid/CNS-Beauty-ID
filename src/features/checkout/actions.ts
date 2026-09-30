@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { orderPath, ROUTES } from "@/constants/routes";
 import { getSessionUser } from "@/lib/auth/session";
 import { formatIDR } from "@/lib/utils/format";
+import { trackServerEvent } from "@/services/analytics/record";
 import { CartStoreError, readCart, writeCart } from "@/services/cart/store";
 import { EMPTY_CART } from "@/services/cart/model";
 import { quoteCart } from "@/services/cart/quote";
@@ -86,6 +87,11 @@ export async function placeOrderAction(values: CheckoutValues): Promise<Checkout
     case "ok":
       break;
   }
+
+  await trackServerEvent("ORDER_CREATED", {
+    orderId: result.orderId,
+    properties: { total: result.total, itemCount: cart.items.length, pointsApplied: quoted.quote.pointsApplied, coupon: Boolean(cart.coupon) },
+  });
 
   // The order exists now; failing to clear the cart must not hide that.
   await writeCart(EMPTY_CART).catch((error: unknown) => console.error("[checkout] clearing the cart failed", error));

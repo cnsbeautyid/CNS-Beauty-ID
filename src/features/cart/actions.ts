@@ -6,6 +6,7 @@ import { z } from "zod";
 import { ROUTES } from "@/constants/routes";
 import { getSessionUserId } from "@/lib/auth/session";
 import { createPublicClient } from "@/lib/supabase/public";
+import { trackServerEvent } from "@/services/analytics/record";
 import { CartStoreError, readCart, writeCart } from "@/services/cart/store";
 import {
   addItem,
@@ -67,6 +68,7 @@ export async function addToCartAction(input: unknown): Promise<CartActionResult>
 
     await writeCart(change.cart);
     revalidatePath(ROUTES.cart);
+    await trackServerEvent("ADD_TO_CART", { productId, properties: { quantity, source: "product" } });
     return { ok: true, count: itemCount(change.cart), message: "Ditambahkan ke keranjang." };
   }, FAILED);
 }
@@ -91,6 +93,7 @@ export async function removeItemAction(input: unknown): Promise<CartActionResult
     const cart = removeItem(await readCart(), parsed.data.key);
     await writeCart(cart);
     revalidatePath(ROUTES.cart);
+    await trackServerEvent("REMOVE_FROM_CART", { productId: parsed.data.key.slice(0, 36) });
     return { ok: true, count: itemCount(cart), message: "Produk dihapus dari keranjang." };
   }, FAILED);
 }
@@ -117,6 +120,7 @@ export async function applyCouponAction(_previous: CouponFormState, formData: Fo
 
     await writeCart(candidate);
     revalidatePath(ROUTES.cart);
+    await trackServerEvent("VOUCHER_APPLIED", { properties: { discount: result.quote.discountTotal } });
     return { status: "success", message: `Kupon ${result.quote.coupon.code} diterapkan.` };
   }, { status: "error", message: STORE_FAILED });
 }

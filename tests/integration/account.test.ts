@@ -8,6 +8,7 @@ vi.mock("server-only", () => ({}));
 type Row = Record<string, unknown>;
 
 const state = vi.hoisted(() => ({
+  trackServerEvent: vi.fn(),
   userId: null as string | null,
   tables: {} as Record<string, Row[]>,
   cookie: undefined as string | undefined,
@@ -77,6 +78,7 @@ vi.mock("@/services/cart/cookie", () => ({
   },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/services/analytics/record", () => ({ trackServerEvent: state.trackServerEvent }));
 vi.mock("next/navigation", () => ({ redirect: state.redirect }));
 
 const store = await import("@/services/cart/store");
@@ -140,6 +142,7 @@ describe("reorderAction", () => {
 
     await expect(reorderAction(ORDER)).rejects.toThrow("REDIRECT:/cart");
     expect(await store.readCart()).toEqual({ v: 1, items: [{ p: P1, q: 2 }] });
+    expect(state.trackServerEvent).toHaveBeenCalledWith("ADD_TO_CART", { properties: { quantity: 1, source: "reorder" } });
   });
 
   it("does not expose other customers' orders", async () => {

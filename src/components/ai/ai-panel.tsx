@@ -4,6 +4,7 @@ import { MessageCircle, RotateCcw, Sparkles, Square, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef } from "react";
 
+import { track } from "@/lib/analytics/client";
 import { IconButton } from "@/components/ui/icon-button";
 import { AI_COPY, AI_QUICK_ACTIONS } from "@/config/ai";
 import { ROUTES } from "@/constants/routes";
@@ -38,6 +39,7 @@ export function AIPanel() {
   const draft = useUIStore((state) => state.aiDraft);
   const setDraft = useUIStore((state) => state.setAIDraft);
   const pageContext = useAIStore((state) => state.pageContext);
+  const conversationId = useAIStore((state) => state.conversationId);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -45,6 +47,7 @@ export function AIPanel() {
     if (open && !dialog.open) {
       if (window.matchMedia(DESKTOP_QUERY).matches) dialog.show();
       else dialog.showModal();
+      track("AI_OPENED");
     }
     if (!open && dialog.open) dialog.close();
   }, [open]);
@@ -127,7 +130,7 @@ export function AIPanel() {
                 </AIMessage>
               )}
               {message.state === "streaming" && (!message.content || statusLabel) && <AIThinkingIndicator label={statusLabel} />}
-              {message.products.length > 0 && <AIProductCards products={message.products} onNavigate={close} />}
+              {message.products.length > 0 && <AIProductCards products={message.products} conversationId={conversationId} onNavigate={close} />}
               {message.handoffUrl && (
                 <a
                   href={message.handoffUrl}

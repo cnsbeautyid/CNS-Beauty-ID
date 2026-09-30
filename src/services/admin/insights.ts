@@ -78,27 +78,6 @@ export async function getContentInsights(): Promise<ContentInsights | null> {
   }
 }
 
-export type AnalyticsInsights = { total30d: number; byEvent: { name: string; count: number }[] };
-
-const EVENT_SAMPLE = 5000;
-
-export async function getAnalyticsInsights(): Promise<AnalyticsInsights | null> {
-  const db = await createClient();
-  const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
-  const { data, error, count: total } = await db
-    .from("analytics_events")
-    .select("event_name", { count: "exact" })
-    .gte("created_at", since)
-    .limit(EVENT_SAMPLE);
-  if (error) {
-    console.error("[admin] getAnalyticsInsights failed", error);
-    return null;
-  }
-  const counts = new Map<string, number>();
-  for (const row of data ?? []) counts.set(row.event_name, (counts.get(row.event_name) ?? 0) + 1);
-  return { total30d: total ?? 0, byEvent: [...counts.entries()].map(([name, n]) => ({ name, count: n })).sort((a, b) => b.count - a.count) };
-}
-
 export type AuditRow = { id: string; action: string; entityType: string; entityId: string | null; summary: unknown; createdAt: string; actor: string };
 
 export async function listAuditLog(limit = 100): Promise<AuditRow[] | null> {

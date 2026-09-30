@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { TrackEvent } from "@/components/analytics/track-event";
 import { Container } from "@/components/layout/container";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, ErrorState } from "@/components/ui/states";
@@ -128,6 +129,7 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/checkou
 
   return (
     <Shell email={user.email}>
+      <TrackEvent name="CHECKOUT_STARTED" properties={{ itemCount: cart.items.length }} />
       <div className="grid gap-10 desktop:grid-cols-3">
         <div className="desktop:col-span-2">
           {balance > 0 && (programme?.settings.pointValue ?? 0) > 0 && (

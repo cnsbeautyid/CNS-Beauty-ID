@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { TrackEvent } from "@/components/analytics/track-event";
 import { Container } from "@/components/layout/container";
 import { Rating } from "@/components/product/rating";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -142,6 +143,7 @@ export default async function ProductDetailPage({ params }: PageProps<"/produk/[
           categoryId: product.category?.id,
         }}
       />
+      <TrackEvent name="PRODUCT_VIEWED" productId={product.id} properties={{ slug: product.slug }} />
       <JsonLd data={productJsonLd(product)} />
       <JsonLd data={breadcrumbJsonLd(product)} />
 

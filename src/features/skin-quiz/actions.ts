@@ -6,6 +6,7 @@ import { z } from "zod";
 import { ROUTES } from "@/constants/routes";
 import { getSessionUser } from "@/lib/auth/session";
 import { createPublicClient } from "@/lib/supabase/public";
+import { trackServerEvent } from "@/services/analytics/record";
 import { addItem, itemCount, type CartState } from "@/services/cart/model";
 import { CartStoreError, readCart, writeCart } from "@/services/cart/store";
 import { quizAnswersSchema, type QuizAnswers } from "@/services/quiz/schema";
@@ -34,6 +35,9 @@ export async function submitSkinQuizAction(values: QuizAnswers): Promise<QuizAct
   const user = await getSessionUser();
   const saved = user ? await saveBeautyProfile(user.id, parsed.data, options) : false;
   await logRecommendation(user?.id ?? null, parsed.data, outcome.result);
+  await trackServerEvent("SKIN_QUIZ_COMPLETED", {
+    properties: { skinType: parsed.data.skinType, concerns: parsed.data.concerns.length, recommended: outcome.result.products.length },
+  });
   if (saved) revalidatePath(ROUTES.account.skinProfile);
   return { ok: true, result: outcome.result, saved };
 }
@@ -73,6 +77,7 @@ export async function addRoutineToCartAction(productIds: string[]): Promise<Rout
     }, await readCart());
     await writeCart(cart);
     revalidatePath(ROUTES.cart);
+    await trackServerEvent("ADD_TO_CART", { properties: { quantity: available.length, source: "skin_quiz" } });
     return { ok: true, added: available.length, skipped: parsed.data.length - available.length, count: itemCount(cart) };
   } catch (error) {
     if (!(error instanceof CartStoreError)) throw error;

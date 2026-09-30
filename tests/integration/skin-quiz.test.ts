@@ -5,6 +5,7 @@ import type { QuizAnswers } from "@/services/quiz/schema";
 vi.mock("server-only", () => ({}));
 
 const mocks = vi.hoisted(() => ({
+  trackServerEvent: vi.fn(),
   getSessionUser: vi.fn(),
   getQuizOptions: vi.fn(),
   computeQuizResult: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock("@/services/quiz/quiz", () => ({
 }));
 vi.mock("@/services/cart/store", () => ({ readCart: mocks.readCart, writeCart: mocks.writeCart, CartStoreError: class extends Error {} }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/services/analytics/record", () => ({ trackServerEvent: mocks.trackServerEvent }));
 vi.mock("@/lib/supabase/public", () => ({
   createPublicClient: () => ({
     from: () => {
@@ -68,6 +70,9 @@ describe("submitSkinQuizAction", () => {
     expect(await submitSkinQuizAction(ANSWERS)).toEqual({ ok: true, result: RESULT, saved: false });
     expect(mocks.saveBeautyProfile).not.toHaveBeenCalled();
     expect(mocks.logRecommendation).toHaveBeenCalledWith(null, ANSWERS, RESULT);
+    expect(mocks.trackServerEvent).toHaveBeenCalledWith("SKIN_QUIZ_COMPLETED", {
+      properties: { skinType: ANSWERS.skinType, concerns: ANSWERS.concerns.length, recommended: RESULT.products.length },
+    });
   });
 
   it("saves the profile for the session user only", async () => {
@@ -96,6 +101,7 @@ describe("addRoutineToCartAction", () => {
     const outcome = await addRoutineToCartAction([IN_STOCK, SOLD_OUT, ARCHIVED]);
     expect(outcome).toEqual({ ok: true, added: 1, skipped: 2, count: 1 });
     expect(mocks.writeCart).toHaveBeenCalledWith({ v: 1, items: [{ p: IN_STOCK, q: 1 }] });
+    expect(mocks.trackServerEvent).toHaveBeenCalledWith("ADD_TO_CART", { properties: { quantity: 1, source: "skin_quiz" } });
   });
 
   it("refuses when nothing is available, and validates ids", async () => {

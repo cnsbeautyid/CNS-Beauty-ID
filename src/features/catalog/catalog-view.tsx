@@ -3,6 +3,7 @@ import Form from "next/form";
 import Link from "next/link";
 
 import { AskAIButton } from "@/components/ai/ask-ai-button";
+import { TrackEvent } from "@/components/analytics/track-event";
 import { Container } from "@/components/layout/container";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ButtonLink } from "@/components/ui/button";
@@ -31,6 +32,9 @@ export function CatalogView({ title, description, basePath, query, listing, face
 
   return (
     <main id="main-content">
+      {query.q && listing.status === "ok" && (
+        <TrackEvent key={query.q} name="PRODUCT_SEARCHED" properties={{ query: query.q, results: listing.total }} />
+      )}
       <section aria-labelledby="page-title" className="bg-brand-cream">
         <Container className="py-12 desktop:py-16">
           <p className="text-caption tracking-eyebrow text-brand-cocoa uppercase">Produk</p>

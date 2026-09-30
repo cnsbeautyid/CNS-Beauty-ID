@@ -10,6 +10,7 @@ import { getSessionUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
+import { trackServerEvent } from "@/services/analytics/record";
 import { addItem, type CartState } from "@/services/cart/model";
 import { CartStoreError, readCart, writeCart } from "@/services/cart/store";
 import { PAYMENT_PROOF_BUCKET } from "@/services/order/order";
@@ -45,6 +46,7 @@ export async function recordPaymentProofAction(orderId: string): Promise<ProofRe
   }
 
   revalidatePath(orderPath(order.order_number));
+  await trackServerEvent("PAYMENT_STARTED", { orderId: order.id, properties: { method: "bank_transfer_proof" } });
   return { ok: true };
 }
 
@@ -83,5 +85,6 @@ export async function reorderAction(orderId: string): Promise<ProofResult> {
   }
 
   revalidatePath(ROUTES.cart);
+  await trackServerEvent("ADD_TO_CART", { properties: { quantity: available.length, source: "reorder" } });
   redirect(ROUTES.cart);
 }

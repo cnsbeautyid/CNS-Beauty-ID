@@ -1,5 +1,6 @@
 import { Gift, Star } from "lucide-react";
 
+import { TrackEvent } from "@/components/analytics/track-event";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorState } from "@/components/ui/states";
@@ -44,6 +45,7 @@ export default async function AccountLoyaltyPage() {
 
   return (
     <div className="flex flex-col gap-10">
+      <TrackEvent name="LOYALTY_VIEWED" />
       <h1 className="text-h1 text-brand-cocoa-dark">CNS Rewards</h1>
 
       <Card as="section" padding="lg" tone="surface" className="grid gap-6 tablet:grid-cols-2">
