@@ -4,7 +4,7 @@
  * resolves identity and permissions independently.
  */
 export type AIPageContext = {
-  pageType: "home" | "shop" | "product" | "cart" | "checkout" | "account" | "reseller" | "other";
+  pageType: "home" | "shop" | "product" | "cart" | "checkout" | "account" | "reseller" | "concierge" | "other";
   productId?: string;
   productSlug?: string;
   /** Display only (e.g. "Kamu sedang melihat …"); the server resolves facts by id. */

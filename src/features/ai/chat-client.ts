@@ -34,5 +34,6 @@ export function pageTypeFromPath(pathname: string): NonNullable<ChatRequest["pag
   if (pathname.startsWith("/checkout")) return "checkout";
   if (pathname.startsWith("/account")) return "account";
   if (pathname.startsWith("/reseller")) return "reseller";
+  if (pathname === "/beauty-concierge") return "concierge";
   return "other";
 }

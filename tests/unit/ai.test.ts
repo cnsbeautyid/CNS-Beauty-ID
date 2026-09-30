@@ -111,3 +111,18 @@ describe("toLexicalQuery", () => {
     expect(toLexicalQuery("satu dua tiga empat lima enam tujuh delapan sembilan sepuluh")?.split(" or ")).toHaveLength(8);
   });
 });
+
+describe("concierge page type", () => {
+  it("accepts the concierge page type and maps its path", () => {
+    const request = { messages: [{ role: "user", content: "Halo" }], pageContext: { pageType: "concierge" } };
+    expect(chatRequestSchema.safeParse(request).success).toBe(true);
+    expect(pageTypeFromPath("/beauty-concierge")).toBe("concierge");
+    expect(pageTypeFromPath("/beauty")).toBe("other");
+  });
+
+  it("describes the concierge page as context, not a product", () => {
+    const note = buildContextNote({ pageType: "concierge" });
+    expect(note).toContain("Beauty Concierge");
+    expect(note).not.toContain("slug");
+  });
+});

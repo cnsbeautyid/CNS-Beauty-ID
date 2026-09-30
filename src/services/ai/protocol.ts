@@ -29,7 +29,7 @@ export function encodeEvent(event: ConciergeEvent): string {
   return `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
 }
 
-const cardSchema = z.object({
+export const productCardSchema = z.object({
   slug: z.string(),
   name: z.string(),
   price: z.number(),
@@ -43,7 +43,7 @@ const eventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("meta"), conversationId: z.string().nullable() }),
   z.object({ type: z.literal("status"), label: z.string() }),
   z.object({ type: z.literal("text"), delta: z.string() }),
-  z.object({ type: z.literal("products"), items: z.array(cardSchema) }),
+  z.object({ type: z.literal("products"), items: z.array(productCardSchema) }),
   z.object({ type: z.literal("handoff"), url: z.string().nullable() }),
   z.object({ type: z.literal("unavailable"), message: z.string() }),
   z.object({ type: z.literal("error"), message: z.string() }),
@@ -77,7 +77,7 @@ export function createEventDecoder(onEvent: (event: ConciergeEvent) => void) {
   };
 }
 
-export const PAGE_TYPES = ["home", "shop", "product", "cart", "checkout", "account", "reseller", "other"] as const;
+export const PAGE_TYPES = ["home", "shop", "product", "cart", "checkout", "account", "reseller", "concierge", "other"] as const;
 
 export const MAX_HISTORY = 20;
 export const MAX_MESSAGE_LENGTH = 2000;

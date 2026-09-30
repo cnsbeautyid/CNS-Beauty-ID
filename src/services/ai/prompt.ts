@@ -55,5 +55,8 @@ export function buildContextNote(context: ChatRequest["pageContext"], partner?: 
     const name = context.productName ? ` "${context.productName}"` : "";
     return `Konteks halaman: pelanggan sedang melihat produk${name} (slug: ${context.productSlug}). Gunakan get_product dengan slug ini jika pertanyaannya tentang produk tersebut.`;
   }
+  if (context.pageType === "concierge") {
+    return "Konteks halaman: pelanggan membuka halaman Beauty Concierge untuk konsultasi. Tidak ada produk tertentu yang sedang dilihat.";
+  }
   return `Konteks halaman: pelanggan berada di halaman ${context.pageType}.`;
 }

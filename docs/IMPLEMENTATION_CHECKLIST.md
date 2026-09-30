@@ -22,7 +22,7 @@
 - [x] Skin Profile (Phase 11 — beauty_profiles upsert, /account/skin-profile)
 - [x] Routine (Phase 12 — /account/routine builder, quiz → routine, routine to cart, AI profile/routine tool)
 - [x] Loyalty (Phase 13 — CNS Rewards page, reward redemption, points at checkout, loyalty AI tool)
-- [ ] Beauty Concierge
+- [x] Beauty Concierge (Phase 17: full page /beauty-concierge, conversation shared with the panel and kept per tab, personal rail)
 - [ ] Journal
 - [x] Reseller Portal (Phase 14 — programme page + application, partner portal: dashboard, price list, orders)
 - [x] Reseller AI (Phase 14 — partner mode with partner price/sales tools, no commission)

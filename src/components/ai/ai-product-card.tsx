@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 
 import { productPath } from "@/constants/routes";
 import { track } from "@/lib/analytics/client";
+import { cn } from "@/lib/utils/cn";
 import { formatIDR } from "@/lib/utils/format";
 import type { AIProductCard } from "@/services/ai/protocol";
 
@@ -14,10 +15,12 @@ export function AIProductCards({
   products,
   conversationId,
   onNavigate,
+  layout = "scroll",
 }: {
   products: AIProductCard[];
   conversationId?: string | null;
   onNavigate?: () => void;
+  layout?: "scroll" | "grid";
 }) {
   const viewed = useRef(false);
   useEffect(() => {
@@ -32,12 +35,27 @@ export function AIProductCards({
   };
 
   return (
-    <ul aria-label="Rekomendasi produk" className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+    <ul
+      aria-label="Rekomendasi produk"
+      className={cn(
+        "-mx-1 flex gap-3 overflow-x-auto px-1 pb-1",
+        // Page layout: sideways scroll on phones, two columns from tablet width.
+        layout === "grid" && "tablet:mx-0 tablet:grid tablet:grid-cols-2 tablet:overflow-visible tablet:px-0 tablet:pb-0",
+      )}
+    >
       {products.map((product) => (
-        <li key={product.slug} className="w-44 shrink-0">
+        <li key={product.slug} className={cn("w-44 shrink-0", layout === "grid" && "tablet:w-auto tablet:min-w-0 tablet:shrink")}>
           <article className="relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-background">
             <div className="relative aspect-[4/3] bg-brand-ivory">
-              {product.imageUrl && <Image src={product.imageUrl} alt="" fill sizes="176px" className="object-cover" />}
+              {product.imageUrl && (
+                <Image
+                  src={product.imageUrl}
+                  alt=""
+                  fill
+                  sizes={layout === "grid" ? "(min-width: 64rem) 20rem, (min-width: 40rem) 45vw, 176px" : "176px"}
+                  className="object-cover"
+                />
+              )}
             </div>
             <div className="flex flex-1 flex-col gap-1 p-3">
               <h3 className="font-display text-body leading-snug">
