@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   readCart: vi.fn(),
   quoteCart: vi.fn(),
   getPublicContact: vi.fn(),
+  searchKnowledge: vi.fn(),
 }));
 vi.mock("@/services/catalog/products", () => ({ listProducts: mocks.listProducts }));
 vi.mock("@/services/catalog/product-detail", () => ({ getProductBySlug: mocks.getProductBySlug }));
@@ -19,6 +20,7 @@ vi.mock("@/services/order/order", () => ({ getOwnOrder: mocks.getOwnOrder }));
 vi.mock("@/services/cart/store", () => ({ readCart: mocks.readCart }));
 vi.mock("@/services/cart/quote", () => ({ quoteCart: mocks.quoteCart }));
 vi.mock("@/services/content/contact", () => ({ getPublicContact: mocks.getPublicContact }));
+vi.mock("@/services/ai/knowledge", () => ({ searchKnowledge: mocks.searchKnowledge }));
 
 const { runConcierge, MAX_TOOL_ROUNDS } = await import("@/services/ai/concierge");
 const { CONCIERGE_TOOLS } = await import("@/services/ai/tools");
@@ -79,7 +81,7 @@ describe("runConcierge", () => {
       { type: "products", items: [{ slug: "toner", name: "Produk toner", price: 90000, compareAtPrice: undefined, available: false, imageUrl: undefined, shortDescription: undefined }] },
       { type: "text", delta: "Coba Toner ini." },
     ]);
-    expect(result).toEqual({ text: "Coba Toner ini.", usage: { input: 50, output: 8 }, escalationReason: undefined });
+    expect(result).toEqual({ text: "Coba Toner ini.", usage: { input: 50, output: 8 }, escalationReason: undefined, retrievedChunkIds: [] });
 
     // The model saw the system prompt, the page hint, the tool call and a DB-sourced tool result.
     const second = llm.calls[1] ?? [];
@@ -156,5 +158,38 @@ describe("controlled tools", () => {
     const outcome = await CONCIERGE_TOOLS.run("get_product", '{"slug":"serum"}', guest);
     expect(JSON.parse(outcome.content)).toMatchObject({ approved_benefits: [], approved_faqs: [], key_ingredients: [{ name: "Niacinamide" }] });
     expect(outcome.products?.[0]).toMatchObject({ slug: "serum", price: 150000, available: true });
+  });
+});
+
+describe("knowledge retrieval", () => {
+  const base = { tools: CONCIERGE_TOOLS, hints: { concerns: [], skinTypes: [] }, context: { userId: null } };
+
+  it("answers from approved sources and records which chunks were used", async () => {
+    mocks.searchKnowledge.mockResolvedValue({
+      status: "ok",
+      sources: [{ chunkId: "chunk-1", title: "Pengiriman", category: "shipping", content: "Pesanan dikirim dalam 1-3 hari kerja." }],
+    });
+    const llm = scriptedLLM([
+      [{ type: "end", toolCalls: [{ id: "k", name: "search_knowledge", arguments: '{"query":"pengiriman","category":"shipping"}' }], finishReason: "tool_calls" }],
+      [{ type: "text", delta: "Pesanan dikirim dalam 1-3 hari kerja." }, { type: "end", toolCalls: [], finishReason: "stop" }],
+    ]);
+    const { events, result } = await collect(runConcierge({ ...base, llm, history: [{ role: "user", content: "Berapa lama pengiriman?" }], pageContext: undefined }));
+
+    expect(mocks.searchKnowledge).toHaveBeenCalledWith("pengiriman", { category: "shipping" });
+    expect(events).toContainEqual({ type: "status", label: "Mencari informasi resmi CNS Beauty…" });
+    expect(result).toMatchObject({ retrievedChunkIds: ["chunk-1"] });
+    const toolMessage = llm.calls[1]?.at(-1) as { content: string };
+    expect(JSON.parse(toolMessage.content)).toEqual({ sources: [{ title: "Pengiriman", category: "shipping", content: "Pesanan dikirim dalam 1-3 hari kerja." }] });
+  });
+
+  it("tells the model not to guess when nothing approved matches, and fails safe", async () => {
+    mocks.searchKnowledge.mockResolvedValue({ status: "ok", sources: [] });
+    const empty = await CONCIERGE_TOOLS.run("search_knowledge", '{"query":"aman untuk ibu hamil"}', { userId: null });
+    expect(JSON.parse(empty.content)).toMatchObject({ sources: [], note: expect.stringContaining("Jangan menebak") });
+    expect(empty.chunkIds).toBeUndefined();
+
+    mocks.searchKnowledge.mockResolvedValue({ status: "unavailable" });
+    expect(JSON.parse((await CONCIERGE_TOOLS.run("search_knowledge", '{"query":"brand"}', { userId: null })).content)).toMatchObject({ error: expect.any(String) });
+    expect(JSON.parse((await CONCIERGE_TOOLS.run("search_knowledge", '{"query":"x","category":"secrets"}', { userId: null })).content).error).toMatch(/tidak valid/);
   });
 });

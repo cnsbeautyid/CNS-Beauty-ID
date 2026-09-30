@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { pageTypeFromPath } from "@/features/ai/chat-client";
 import { createRateLimiter } from "@/lib/utils/rate-limit";
+import { toLexicalQuery } from "@/services/ai/knowledge-query";
 import { createCompletionAccumulator, splitSSE } from "@/services/ai/openai-stream";
 import { buildContextNote, buildSystemPrompt } from "@/services/ai/prompt";
 import { chatRequestSchema, createEventDecoder, encodeEvent, type ConciergeEvent } from "@/services/ai/protocol";
@@ -94,5 +95,19 @@ describe("helpers", () => {
     expect(pageTypeFromPath("/produk/serum")).toBe("shop");
     expect(pageTypeFromPath("/account/orders")).toBe("account");
     expect(pageTypeFromPath("/tentang-kami")).toBe("other");
+  });
+});
+
+describe("toLexicalQuery", () => {
+  it("keeps keywords, drops Indonesian stopwords and ORs the terms", () => {
+    expect(toLexicalQuery("Berapa lama pengiriman ke Jakarta?")).toBe("lama or pengiriman or jakarta");
+    expect(toLexicalQuery("Apakah CNS Beauty aman untuk kulit sensitif??")).toBe("cns or beauty or aman or kulit or sensitif");
+    expect(toLexicalQuery("Crème hydratée")).toBe("creme or hydratee");
+  });
+
+  it("returns null when nothing searchable remains and caps the term count", () => {
+    expect(toLexicalQuery("apa itu ya?")).toBeNull();
+    expect(toLexicalQuery("-- or & | !")).toBeNull();
+    expect(toLexicalQuery("satu dua tiga empat lima enam tujuh delapan sembilan sepuluh")?.split(" or ")).toHaveLength(8);
   });
 });
