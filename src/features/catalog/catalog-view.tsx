@@ -70,7 +70,8 @@ export function CatalogView({ title, description, basePath, query, listing, face
             </aside>
           )}
 
-          <div className={cn(facets && "desktop:col-span-3")}>
+          {/* min-w-0: a grid item defaults to its content's min width, which pushed the page sideways at 320px (WCAG 1.4.10). */}
+          <div className={cn("min-w-0", facets && "desktop:col-span-3")}>
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
               <p aria-live="polite" className="text-body-s text-text-secondary">
                 {listing.status === "ok" ? `${listing.total} produk` : " "}
