@@ -7,7 +7,8 @@ import { expect, test, type Page } from "@playwright/test";
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const PUBLIC_PAGES = [
   "/", "/produk", "CATEGORY", "PRODUCT", "/tentang-kami", "/manfaat", "/testimoni", "/beauty-concierge",
-  "/skin-quiz", "/faq", "/kontak", "/kebijakan-privasi", "/reseller", "/cart", "/checkout", "/masuk", "/daftar",
+  "/skin-quiz", "/faq", "/kontak", "/kebijakan-privasi", "/reseller", "/cart", "/masuk", "/daftar",
+  "/produk?q=zzqqxx", "/design-system",
 ];
 
 async function resolvePath(page: Page, path: string): Promise<string> {
@@ -27,8 +28,11 @@ async function settle(page: Page): Promise<void> {
 }
 
 async function open(page: Page, path: string): Promise<void> {
-  await page.goto(await resolvePath(page, path));
+  const response = await page.goto(await resolvePath(page, path));
+  expect(response?.status() ?? 0, `${path} responds`).toBeLessThan(400);
   await settle(page);
+  // Guards must test the real page, not an error boundary or an empty shell.
+  await expect(page.locator("h1").first(), `${path} rendered`).toBeVisible();
 }
 
 async function axeViolations(page: Page): Promise<string[]> {
@@ -46,11 +50,29 @@ test.describe("Accessibility sweep (WCAG 2.2 AA)", () => {
     });
   }
 
+  test("/checkout sends signed-out visitors to sign-in, which has no axe violations", async ({ page }) => {
+    await page.goto("/checkout");
+    await settle(page);
+    await expect(page).toHaveURL(/\/masuk/);
+    await expect(page.locator("h1").first()).toBeVisible();
+    expect(await axeViolations(page)).toEqual([]);
+  });
+
+  test("the 404 page has no axe violations", async ({ page }) => {
+    const response = await page.goto("/halaman-yang-tidak-ada");
+    expect(response?.status()).toBe(404);
+    await expect(page.locator("h1").first()).toBeVisible();
+    expect(await axeViolations(page)).toEqual([]);
+  });
+
   test("open overlays have no axe violations", async ({ page, isMobile }) => {
     await open(page, "/");
     if (isMobile) await page.getByRole("button", { name: "Buka menu" }).click();
     else await page.getByRole("button", { name: "Tanya Beauty AI" }).click();
-    await expect(page.getByRole("dialog").first()).toBeVisible();
+    const dialog = page.getByRole("dialog").first();
+    await expect(dialog).toBeVisible();
+    // Wait for the enter transition; mid-fade opacity lowers measured contrast.
+    await expect(dialog).toHaveCSS("opacity", "1");
     expect(await axeViolations(page)).toEqual([]);
   });
 });
@@ -64,19 +86,36 @@ test.describe("Keyboard", () => {
     await expect(page.locator("main#main-content")).toBeFocused();
   });
 
+  // Every Tab stop inside <main>, forward from the top and backward from the
+  // footer, must be fully clear of the sticky header (and, on mobile product
+  // pages, of the sticky Add-to-Cart bar). WCAG 2.2 2.4.11.
   for (const path of ["PRODUCT", "/produk"]) {
-    test(`focus on ${path} is never hidden under the sticky header`, async ({ page }) => {
-      await open(page, path);
-      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-      await page.locator("header").first().locator("a:visible, button:visible").last().focus();
-      await page.keyboard.press("Tab");
-      const focused = page.locator(":focus");
-      await expect(focused, "focus moved on").toBeAttached();
-      expect(await focused.evaluate((element) => Boolean(element.closest("main"))), "first Tab after the header lands in <main>").toBe(true);
-      const header = (await page.locator("header").first().boundingBox())!;
-      const top = (await focused.boundingBox())!.y;
-      expect(top, "focused element is below the sticky header").toBeGreaterThanOrEqual(header.y + header.height - 1);
-    });
+    for (const direction of ["Tab", "Shift+Tab"] as const) {
+      test(`${direction} focus on ${path} is never hidden under sticky bars`, async ({ page }) => {
+        await open(page, path);
+        if (direction === "Shift+Tab") await page.locator("footer a").last().focus();
+        const hidden: string[] = [];
+        let checked = 0;
+        for (let step = 0; step < 60; step++) {
+          await page.keyboard.press(direction);
+          const state = await page.evaluate(() => {
+            const element = document.activeElement as HTMLElement | null;
+            if (!element || !element.closest("main")) return null;
+            const box = element.getBoundingClientRect();
+            const header = document.querySelector("header")!.getBoundingClientRect();
+            const bar = document.querySelector("[data-sticky-commerce]");
+            const barTop = bar && getComputedStyle(bar).display !== "none" ? bar.getBoundingClientRect().top : Infinity;
+            const label = (element.getAttribute("aria-label") || element.textContent || element.tagName).trim().slice(0, 30);
+            return { label, underHeader: box.top < header.bottom - 1, underBar: box.bottom > barTop + 1 && box.height < barTop };
+          });
+          if (!state) continue;
+          checked++;
+          if (state.underHeader || state.underBar) hidden.push(`${state.label}${state.underHeader ? " (header)" : ""}${state.underBar ? " (bar)" : ""}`);
+        }
+        expect(checked, "focus visited elements inside <main>").toBeGreaterThan(3);
+        expect(hidden).toEqual([]);
+      });
+    }
   }
 });
 

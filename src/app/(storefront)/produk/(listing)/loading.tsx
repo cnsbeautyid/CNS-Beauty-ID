@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/states";
 
 export default function ProductsLoading() {
   return (
-    <main id="main-content" aria-busy="true">
+    <main aria-busy="true">
       <div className="bg-brand-cream">
         <Container className="py-12 desktop:py-16">
           <Skeleton className="h-3 w-16" />

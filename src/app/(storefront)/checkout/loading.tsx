@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/states";
 
 export default function CheckoutLoading() {
   return (
-    <main id="main-content" aria-busy="true">
+    <main aria-busy="true">
       <Container className="py-10 desktop:py-16">
         <Skeleton className="h-10 w-48" />
         <div className="mt-8 grid gap-10 desktop:grid-cols-3">
