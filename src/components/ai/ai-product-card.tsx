@@ -14,10 +14,12 @@ export function AIProductCards({
   products,
   conversationId,
   onNavigate,
+  layout = "scroll",
 }: {
   products: AIProductCard[];
   conversationId?: string | null;
   onNavigate?: () => void;
+  layout?: "scroll" | "grid";
 }) {
   const viewed = useRef(false);
   useEffect(() => {
@@ -32,12 +34,23 @@ export function AIProductCards({
   };
 
   return (
-    <ul aria-label="Rekomendasi produk" className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+    <ul
+      aria-label="Rekomendasi produk"
+      className={layout === "grid" ? "grid grid-cols-2 gap-3" : "-mx-1 flex gap-3 overflow-x-auto px-1 pb-1"}
+    >
       {products.map((product) => (
-        <li key={product.slug} className="w-44 shrink-0">
+        <li key={product.slug} className={layout === "grid" ? "min-w-0" : "w-44 shrink-0"}>
           <article className="relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-background">
             <div className="relative aspect-[4/3] bg-brand-ivory">
-              {product.imageUrl && <Image src={product.imageUrl} alt="" fill sizes="176px" className="object-cover" />}
+              {product.imageUrl && (
+                <Image
+                  src={product.imageUrl}
+                  alt=""
+                  fill
+                  sizes={layout === "grid" ? "(min-width: 64rem) 20rem, 45vw" : "176px"}
+                  className="object-cover"
+                />
+              )}
             </div>
             <div className="flex flex-1 flex-col gap-1 p-3">
               <h3 className="font-display text-body leading-snug">

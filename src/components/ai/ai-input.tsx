@@ -10,10 +10,15 @@ type AIInputProps = {
   value?: string;
   onValueChange?: (value: string) => void;
   disabled?: boolean;
+  /** Fixed id so page elements (rail chips) can focus the input. */
+  id?: string;
+  /** The panel focuses on open; the full page never steals focus on load. */
+  autoFocus?: boolean;
 };
 
-export function AIInput({ onSubmit, value: controlledValue, onValueChange, disabled }: AIInputProps) {
-  const id = useId();
+export function AIInput({ onSubmit, value: controlledValue, onValueChange, disabled, id: idProp, autoFocus = true }: AIInputProps) {
+  const generatedId = useId();
+  const id = idProp ?? generatedId;
   const [localValue, setLocalValue] = useState("");
   const value = controlledValue ?? localValue;
   const setValue = onValueChange ?? setLocalValue;
@@ -34,7 +39,7 @@ export function AIInput({ onSubmit, value: controlledValue, onValueChange, disab
       </label>
       <input
         id={id}
-        autoFocus
+        autoFocus={autoFocus}
         autoComplete="off"
         maxLength={1000}
         placeholder="Tanyakan kebutuhan kulitmu…"
