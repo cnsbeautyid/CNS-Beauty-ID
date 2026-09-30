@@ -3,6 +3,7 @@ import "server-only";
 import { AI_FUNNEL, PRIMARY_FUNNEL, SKIN_QUIZ_FUNNEL, type AnalyticsEventName } from "@/constants/analytics";
 import { createClient } from "@/lib/supabase/server";
 import { buildFunnel, topValues, type FunnelStep, type ReportWindow } from "@/services/analytics/model";
+import { buildTrend, trendRange, wibToday, type Trend, type TrendRange } from "@/services/analytics/trend";
 
 // Analytics reports for staff. Aggregates run in SQL (analytics_funnel,
 // analytics_event_counts: SECURITY INVOKER, so staff RLS applies); only the
@@ -67,4 +68,21 @@ export async function getConversionRate(days: number): Promise<number | null | u
   }
   const [visits, orders] = buildFunnel(["PAGE_VIEWED", "ORDER_CREATED"], data ?? []);
   return visits && visits.visitors > 0 ? (orders?.visitors ?? 0) / visits.visitors : null;
+}
+
+/** Long-term trend from anonymous daily totals (staff RLS). Up to yesterday, WIB. */
+export async function getAnalyticsTrend(months: TrendRange): Promise<{ status: "ok"; trend: Trend } | { status: "error" }> {
+  const db = await createClient();
+  const range = trendRange(wibToday(), months);
+  const { data, error } = await db
+    .from("analytics_daily_events")
+    .select("day, event_name, events, visitors")
+    .gte("day", range.from)
+    .lte("day", range.to)
+    .limit(20_000);
+  if (error) {
+    console.error("[admin] analytics trend failed", error);
+    return { status: "error" };
+  }
+  return { status: "ok", trend: buildTrend(data ?? [], range) };
 }

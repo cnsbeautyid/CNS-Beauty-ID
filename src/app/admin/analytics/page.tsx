@@ -1,15 +1,18 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { Card } from "@/components/ui/card";
 import { ANALYTICS_EVENT_LABELS, type AnalyticsEventName } from "@/constants/analytics";
 import { ROUTES } from "@/constants/routes";
 import { FunnelChart } from "@/features/admin/funnel-chart";
 import { InsightError } from "@/features/admin/insight-error";
+import { TrendSection, TrendSkeleton } from "@/features/admin/trend-chart";
 import { AdminPageHeader } from "@/features/admin/page-header";
 import { cn } from "@/lib/utils/cn";
 import { getAnalyticsReport } from "@/services/admin/analytics";
 import { requireStaff } from "@/services/admin/auth";
 import { parseReportWindow, REPORT_WINDOWS } from "@/services/analytics/model";
+import { parseTrendRange, TREND_RANGES } from "@/services/analytics/trend";
 
 export const metadata = { title: "Analytics" };
 
@@ -37,9 +40,18 @@ function RankedList({ title, items, empty }: { title: string; items: { value: st
 
 export default async function AdminAnalyticsPage({ searchParams }: PageProps<"/admin/analytics">) {
   await requireStaff(ROUTES.admin.analytics);
-  const days = parseReportWindow((await searchParams).hari);
+  const params = await searchParams;
+  const days = parseReportWindow(params.hari);
+  const months = parseTrendRange(params.tren);
   const report = await getAnalyticsReport(days);
-  const href = (window: number) => (window === 30 ? ROUTES.admin.analytics : `${ROUTES.admin.analytics}?hari=${window}`);
+  // Both selectors keep each other's value; defaults (30 days, 6 months) stay out of the URL.
+  const href = (window: number, trend: number = months) => {
+    const query = new URLSearchParams();
+    if (window !== 30) query.set("hari", String(window));
+    if (trend !== 6) query.set("tren", String(trend));
+    const search = query.toString();
+    return search ? `${ROUTES.admin.analytics}?${search}` : ROUTES.admin.analytics;
+  };
 
   return (
     <>
@@ -114,6 +126,31 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps<"/a
           </p>
         </div>
       )}
+      <Card as="section" padding="lg" aria-labelledby="trend-title" className="mt-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 id="trend-title" className="text-h4">
+            Tren jangka panjang
+          </h2>
+          <nav aria-label="Rentang tren" className="flex gap-1 rounded-md border border-border bg-background p-1">
+            {TREND_RANGES.map((range) => (
+              <Link
+                key={range}
+                href={href(days, range)}
+                aria-current={range === months ? "page" : undefined}
+                className={cn(
+                  "flex min-h-9 items-center rounded-sm px-3 text-body-s",
+                  range === months ? "bg-primary text-on-primary" : "text-text-secondary hover:text-text-primary",
+                )}
+              >
+                {range} bulan
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <Suspense key={months} fallback={<TrendSkeleton />}>
+          <TrendSection months={months} errorHref={href(days)} />
+        </Suspense>
+      </Card>
     </>
   );
 }
