@@ -48,6 +48,8 @@ export const serverEnvSchema = z.object({
   PAYMENT_SECRET: optionalString,
   WEBHOOK_SECRET: optionalString,
   ADMIN_SECRET: optionalString,
+  // Bearer secret Vercel Cron sends to /api/cron/* routes.
+  CRON_SECRET: optionalString,
 });
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>;

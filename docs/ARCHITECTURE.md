@@ -2,9 +2,54 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-29 (Phase 6)
-- **Current phase:** Phase 6 Cart, done and validated
-- **Next phase:** Phase 7 Checkout (fix the public `payment-proofs` bucket first)
+- **Last updated:** 2026-09-30 (Phase 7)
+- **Current phase:** Phase 7 Checkout, done and validated
+- **Next phase:** Phase 8 Customer Account (orders list, DB cart after login, profile)
+
+## Phase 7 summary
+
+Owner decisions (2026-09-29): **manual bank transfer**, **login required for
+checkout**, apply the payment-proofs migration.
+
+- **Basic auth (Supabase email + password):**
+  - Pages: `/masuk`, `/daftar` (RHF + Zod), `/auth/callback` (PKCE code exchange), and sign-out (`AccountStrip`, a plain form POST).
+  - `safeNextPath()` only allows same-origin relative redirects.
+  - Sign-up answers "check your email" for an already-registered address too, so the form can't be used to find out who has an account.
+  - The account area itself comes in Phase 8.
+- **`/checkout`** (dynamic, noindex; signed-out visitors are redirected to `/masuk?next=/checkout`). Linear per PRD §21:
+  - Address: prefilled from `addresses`/`profiles` through RLS, optionally saved (duplicates skipped).
+  - Shipping: fee from the quote; origin and handling time from `settings.shipping`.
+  - Voucher: the coupon from the cart.
+  - Payment: manual transfer.
+  - Confirmation: notes, then "Buat Pesanan".
+- **`placeOrderAction`:**
+  - The user id and email come from `getClaims()`.
+  - It re-quotes and compares the total with what the customer saw (→ `checkout_conflict`, and the page refreshes).
+  - Then it calls `place_order` (service role), which reserves stock atomically. A P0001 error means `inventory_unavailable`.
+  - It inserts a `payments` row (`provider = manual`, `method = bank_transfer`, `expires_at`), clears the cart and redirects to the order page.
+- **`/account/orders/[orderNumber]`:** the owner reads it through RLS; another customer's number is a 404.
+  - Shows status, deadline, bank accounts from `settings.payment`, items, totals, the address and the status history.
+  - If no account is configured, it says the team will send payment details by WhatsApp. It never invents them.
+- **Payment proof:** the browser uploads straight to the private `payment-proofs` bucket at `{uid}/{orderId}/…`, and the storage policy enforces it. The server then confirms the file exists and writes a history note (service role).
+- **Expiry:** `/api/cron/expire-orders` (Vercel Cron, `Authorization: Bearer CRON_SECRET`, compared in constant time).
+  - It calls `release_order(…, 'expired')` for **web** orders past `settings.payment.expiry_hours`.
+  - It skips orders with an uploaded proof and never touches WhatsApp/admin orders.
+  - `vercel.json` runs it daily (18:00 UTC) because of Hobby plan limits; on Pro, run it hourly.
+
+**Migration** `supabase/migrations/20260929165224_payment_proofs_private.sql`
+(applied with owner approval on 2026-09-29):
+- **Bucket:** `payment-proofs` becomes private, with a 5 MB limit and jpeg/png/webp/pdf only. It held 0 objects before the change.
+- **Storage policies:**
+  - A customer may upload only into `{own uid}/{own pending_payment order}/`.
+  - A customer may read only their own folder.
+  - Staff (admin/owner) may read everything.
+  - There is no update or delete.
+- **Settings:** a new `settings.payment` row (public) = `{expiry_hours: 24, bank_accounts: [], note: null}`. The owner fills in `bank_accounts: [{bank, account_number, account_name}]`.
+- **Verified** on the live DB inside transactions that were rolled back:
+  - Allowed: uploading to your own pending order.
+  - Denied: another user's order in your own folder, another user's folder, and an already-paid order.
+  - Reads: a customer sees only their own files, and anon sees nothing.
+- **Advisors:** only the existing leaked-password warning remains.
 
 ## Phase 6 summary
 
@@ -30,7 +75,7 @@ Living document. Updated at the end of every phase.
 - **`/cart`:** dynamic and noindex, with loading, empty, error, unavailable and ok states.
   - Per-line quote errors (out of stock, insufficient stock, minimum quantity…) appear in Indonesian.
   - Coupon form (`useActionState`).
-  - Checkout stays disabled until Phase 7, with WhatsApp ordering as the real channel.
+  - Checkout was disabled until Phase 7; it now links to `/checkout` when the quote has no line errors, and WhatsApp stays available.
 - **Header badge:** `CartLink` reads `GET /api/cart` (`{count}`, no-store)
   through TanStack Query (`QueryProvider` in the storefront layout), so
   marketing and product pages stay static/ISR.
@@ -402,3 +447,4 @@ Follow master prompt §26, with these gates:
 | 4 | pass | pass | 38/38 | pass | 101 pass, 9 skipped (device-specific). Catalog E2E runs against the live public catalog; stable across 2 runs |
 | 5 | pass | pass | 43/43 | pass | 118 pass, 10 skipped (device-specific) |
 | 6 | pass | pass | 58/58 | pass | 132 pass, 12 skipped (device-specific; coupon test waits for the service-role key). Includes axe on `/cart` (empty and with a line) |
+| 7 | pass | pass | 75/75 (incl. checkout action integration tests) | pass | 152 pass, 12 skipped (device-specific; coupon test waits for the service-role key). Signed-out/validation paths only; no accounts are created on live Auth |

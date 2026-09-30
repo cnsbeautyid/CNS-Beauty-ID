@@ -175,14 +175,20 @@ function Summary({ quote, cart, hasLineErrors, whatsapp }: { quote: CartQuote; c
       )}
 
       <div className="flex flex-col gap-2">
-        <Button size="lg" fullWidth disabled aria-describedby="checkout-note">
-          Lanjut ke Checkout
-        </Button>
-        <p id="checkout-note" className="text-caption text-text-secondary">
-          {hasLineErrors
-            ? "Hapus atau ubah produk yang bermasalah untuk melanjutkan."
-            : "Checkout online segera hadir. Untuk saat ini, pesan melalui WhatsApp."}
-        </p>
+        {hasLineErrors ? (
+          <>
+            <Button size="lg" fullWidth disabled aria-describedby="checkout-note">
+              Lanjut ke Checkout
+            </Button>
+            <p id="checkout-note" className="text-caption text-text-secondary">
+              Hapus atau ubah produk yang bermasalah untuk melanjutkan.
+            </p>
+          </>
+        ) : (
+          <ButtonLink href={ROUTES.checkout} size="lg" fullWidth>
+            Lanjut ke Checkout
+          </ButtonLink>
+        )}
         {whatsapp && quote.lines.length > 0 && (
           <a
             href={whatsappUrl(whatsapp, orderMessage)}
@@ -191,7 +197,7 @@ function Summary({ quote, cart, hasLineErrors, whatsapp }: { quote: CartQuote; c
             className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-primary text-body-s font-medium text-text-primary transition-colors duration-(--duration-base) hover:bg-secondary"
           >
             <MessageCircle aria-hidden className="size-4" />
-            Pesan via WhatsApp
+            Atau pesan via WhatsApp
             <span className="sr-only">(membuka WhatsApp)</span>
           </a>
         )}

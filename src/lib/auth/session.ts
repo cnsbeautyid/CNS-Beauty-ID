@@ -9,9 +9,16 @@ import { createClient } from "@/lib/supabase/server";
  * never accept a user id from the browser.
  */
 export async function getSessionUserId(): Promise<string | null> {
+  return (await getSessionUser())?.id ?? null;
+}
+
+export type SessionUser = { id: string; email: string | null };
+
+/** The verified signed-in user (id + email from the JWT claims), or null. */
+export async function getSessionUser(): Promise<SessionUser | null> {
   if (!getSupabasePublicConfig()) return null;
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
-  if (error || !data) return null;
-  return typeof data.claims.sub === "string" ? data.claims.sub : null;
+  if (error || !data || typeof data.claims.sub !== "string") return null;
+  return { id: data.claims.sub, email: typeof data.claims.email === "string" ? data.claims.email : null };
 }

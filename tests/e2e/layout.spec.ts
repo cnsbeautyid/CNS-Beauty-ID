@@ -59,7 +59,7 @@ test.describe("Site header", () => {
 });
 
 test.describe("Responsive layout", () => {
-  for (const path of ["/", "/tentang-kami", "/manfaat", "/testimoni", "/produk", "/cart", "/design-system"]) {
+  for (const path of ["/", "/tentang-kami", "/manfaat", "/testimoni", "/produk", "/cart", "/masuk", "/daftar", "/design-system"]) {
     test(`${path} fits the device width without zooming out`, async ({ page }) => {
       await page.goto(path);
       const viewportWidth = page.viewportSize()?.width;

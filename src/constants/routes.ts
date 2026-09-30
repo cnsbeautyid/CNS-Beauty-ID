@@ -26,6 +26,11 @@ export const ROUTES = {
   cart: "/cart",
   checkout: "/checkout",
 
+  // Auth
+  signIn: "/masuk",
+  signUp: "/daftar",
+  authCallback: "/auth/callback",
+
   // Customer account
   account: {
     dashboard: "/account",
