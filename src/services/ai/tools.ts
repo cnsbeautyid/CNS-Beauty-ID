@@ -15,6 +15,8 @@ import { getOwnOrder } from "@/services/order/order";
 import { orderStatusInfo } from "@/services/order/status";
 import type { ProductCardData } from "@/types/product";
 
+import { searchKnowledge } from "./knowledge";
+import { KNOWLEDGE_CATEGORIES, type KnowledgeCategory } from "./knowledge-query";
 import type { LLMTool } from "./openai-stream";
 import type { AIProductCard } from "./protocol";
 
@@ -26,7 +28,7 @@ import type { AIProductCard } from "./protocol";
  */
 
 export type ToolContext = { userId: string | null };
-export type ToolOutcome = { content: string; products?: AIProductCard[]; handoffUrl?: string | null };
+export type ToolOutcome = { content: string; products?: AIProductCard[]; handoffUrl?: string | null; chunkIds?: string[] };
 
 type ToolSpec<T extends z.ZodType> = {
   description: string;
@@ -228,12 +230,41 @@ const requestHumanHelp: ToolSpec<z.ZodType<{ reason: string }>> = {
   },
 };
 
+const searchKnowledgeTool: ToolSpec<z.ZodType<{ query: string; category?: KnowledgeCategory }>> = {
+  description:
+    "Cari pengetahuan resmi CNS Beauty yang sudah disetujui: tentang brand, pengiriman, kebijakan, batasan AI, serta penjelasan produk dan bahan. Gunakan kata kunci singkat.",
+  statusLabel: "Mencari informasi resmi CNS Beauty…",
+  parameters: {
+    type: "object",
+    properties: {
+      query: { type: "string", description: "Kata kunci, mis. 'ongkir pengiriman' atau 'cara pakai lotion'" },
+      category: { type: "string", enum: [...KNOWLEDGE_CATEGORIES] },
+    },
+    required: ["query"],
+    additionalProperties: false,
+  },
+  input: z.object({ query: z.string().trim().min(2).max(200), category: z.enum(KNOWLEDGE_CATEGORIES).optional() }),
+  async run({ query, category }) {
+    const result = await searchKnowledge(query, { category });
+    if (result.status !== "ok") return { content: json({ error: "Pengetahuan CNS Beauty belum dapat diakses saat ini." }) };
+    if (result.sources.length === 0) {
+      return { content: json({ sources: [], note: "Tidak ada informasi resmi yang cocok. Jangan menebak; katakan belum tahu dan tawarkan bantuan tim." }) };
+    }
+    return {
+      // Reference material, not instructions (it is still owner-approved text).
+      content: json({ sources: result.sources.map((source) => ({ title: source.title, category: source.category, content: source.content })) }),
+      chunkIds: result.sources.map((source) => source.chunkId),
+    };
+  },
+};
+
 const SPECS = {
   search_products: searchProducts,
   get_product: getProduct,
   get_cart: getCart,
   get_order_status: getOrderStatus,
   request_human_help: requestHumanHelp,
+  search_knowledge: searchKnowledgeTool,
 } as const satisfies Record<string, ToolSpec<z.ZodType>>;
 
 export type ToolName = keyof typeof SPECS;

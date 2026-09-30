@@ -51,7 +51,14 @@ export async function resolveConversation(requestedId: string | undefined, owner
 
 export async function logMessage(
   conversationId: string | null,
-  message: { role: "user" | "assistant"; content: string; inputTokens?: number; outputTokens?: number; latencyMs?: number },
+  message: {
+    role: "user" | "assistant";
+    content: string;
+    inputTokens?: number;
+    outputTokens?: number;
+    latencyMs?: number;
+    retrievedChunkIds?: string[];
+  },
 ) {
   const db = admin();
   if (!db || !conversationId || !message.content) return;
@@ -63,6 +70,7 @@ export async function logMessage(
     input_tokens: message.inputTokens ?? null,
     output_tokens: message.outputTokens ?? null,
     latency_ms: message.latencyMs ?? null,
+    retrieved_chunk_ids: message.retrievedChunkIds ?? [],
   });
   if (error) console.error("[ai] logMessage failed", error);
 }

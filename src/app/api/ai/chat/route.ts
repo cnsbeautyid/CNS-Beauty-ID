@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
           inputTokens: result.usage.input || undefined,
           outputTokens: result.usage.output || undefined,
           latencyMs: Date.now() - startedAt,
+          retrievedChunkIds: result.retrievedChunkIds,
         });
         if (result.escalationReason) await markEscalated(conversationId, result.escalationReason);
       } catch (error) {

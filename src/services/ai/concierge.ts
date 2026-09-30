@@ -26,7 +26,13 @@ export type ConciergeInput = {
   signal?: AbortSignal;
 };
 
-export type ConciergeResult = { text: string; usage: { input: number; output: number }; escalationReason?: string };
+export type ConciergeResult = {
+  text: string;
+  usage: { input: number; output: number };
+  escalationReason?: string;
+  /** Knowledge chunks the answer drew on (logged as ai_messages.retrieved_chunk_ids). */
+  retrievedChunkIds: string[];
+};
 
 /**
  * One concierge turn: stream the model's answer, run the controlled tools it
@@ -44,6 +50,7 @@ export async function* runConcierge(input: ConciergeInput): AsyncGenerator<Conci
   const usage = { input: 0, output: 0 };
   let text = "";
   let escalationReason: string | undefined;
+  const retrieved = new Set<string>();
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     let roundText = "";
@@ -64,7 +71,7 @@ export async function* runConcierge(input: ConciergeInput): AsyncGenerator<Conci
     }
 
     const calls = end?.toolCalls ?? [];
-    if (calls.length === 0) return { text, usage, escalationReason };
+    if (calls.length === 0) return { text, usage, escalationReason, retrievedChunkIds: [...retrieved] };
 
     messages.push({
       role: "assistant",
@@ -74,6 +81,7 @@ export async function* runConcierge(input: ConciergeInput): AsyncGenerator<Conci
     for (const call of calls) {
       yield { type: "status", label: input.tools.statusLabel(call.name) };
       const outcome = await input.tools.run(call.name, call.arguments, input.context);
+      for (const id of outcome.chunkIds ?? []) retrieved.add(id);
       if (outcome.products?.length) yield { type: "products", items: outcome.products };
       if (outcome.handoffUrl !== undefined) {
         escalationReason = readReason(call.arguments);
@@ -90,5 +98,5 @@ export async function* runConcierge(input: ConciergeInput): AsyncGenerator<Conci
 
   const fallback = "Maaf, aku belum bisa menyelesaikan permintaan ini. Tim CNS Beauty siap membantu melalui WhatsApp.";
   yield { type: "text", delta: fallback };
-  return { text: text + fallback, usage, escalationReason };
+  return { text: text + fallback, usage, escalationReason, retrievedChunkIds: [...retrieved] };
 }
