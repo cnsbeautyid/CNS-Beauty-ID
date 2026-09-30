@@ -18,8 +18,8 @@
 - [ ] Admin catalog/order
 
 ## P1
-- [ ] Skin Quiz
-- [ ] Skin Profile
+- [x] Skin Quiz (Phase 11 — /skin-quiz, rule-based quiz-v1 scoring, routine, add routine to cart)
+- [x] Skin Profile (Phase 11 — beauty_profiles upsert, /account/skin-profile)
 - [ ] Routine
 - [ ] Loyalty
 - [ ] Beauty Concierge

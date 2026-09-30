@@ -2,9 +2,42 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 10)
-- **Current phase:** Phase 10 RAG Knowledge, done and validated (lexical retrieval; waits for knowledge re-approval)
-- **Next phase:** Phase 11 Skin Quiz
+- **Last updated:** 2026-09-30 (Phase 11)
+- **Current phase:** Phase 11 Skin Quiz, done and validated
+- **Next phase:** Phase 12 Routine (personalized routine in the account)
+
+## Phase 11 summary
+
+- **`/skin-quiz`** (ISR, 5 min; indexable, with metadata and a canonical URL). A six-step wizard following PRD §19:
+  1. Skin type, from `skin_types`, plus "Belum yakin".
+  2. Main concerns (1–3), from visible `concerns`.
+  3. Sensitivity.
+  4. Current routine, from `routine_steps`.
+  5. Desired results (a softer signal mapped to concerns).
+  6. Budget.
+- **Wizard behavior:**
+  - Progress bar with `role=progressbar`.
+  - Focus moves to each new question, and "Lanjut" stays disabled until the step is valid.
+  - Progress lives in a Zustand store persisted to **sessionStorage** (`skipHydration` + `rehydrate()` on mount), so a guest who signs in to save comes back to the same result.
+- **Scoring** (`src/services/quiz/scoring.ts`, `scoring_version = quiz-v1`, server-side via `submitSkinQuizAction`):
+  - Rule-based, using the owner's `recommendation_weights` (staff-only table, read with the service role; documented defaults as fallback).
+  - **Signals:** concern relevance from `product_concerns`, goals, skin-type mapping, whether the product fills a routine gap, budget and popularity.
+  - Only products mapped to the customer's concerns are shown, at most 4.
+  - **Claim governance:** reasons cite only the catalog's concern categories ("Termasuk kebutuhan: …"). Skin-type mappings, which currently list *all* types including "sensitive" for both products, influence the ranking but are never shown as "cocok/aman untuk" statements.
+- **Output:**
+  - A profile summary.
+  - General care notes: patch test, a dermatologist for high sensitivity or acne, sunscreen. These are not a diagnosis.
+  - Product cards with price and stock from the catalog.
+  - An AM/PM routine built from `routine_steps` order and time.
+  - **"Tambahkan rutinitas ke keranjang"**: active, in-stock products only, re-checked on the server.
+  - Save profile, ask Beauty AI, and retake.
+  - Empty and error states.
+- **Persistence:**
+  - Signed-in customers get `beauty_profiles` upserted through RLS (unique per user).
+  - Every run is logged to `ai_recommendations` (service role): the snapshot, ranked products, routine and scoring version.
+- **`/account/skin-profile`:** the saved profile (RLS) with retake and Beauty AI shortcuts. It's now in the account nav, and the dashboard links to the quiz.
+- **No migration.**
+- **Bug caught by E2E against the live API:** `products → routine_steps` has two relationships (the direct FK and `routine_products`), so the embed names `routine_steps!products_routine_step_id_fkey`.
 
 ## Phase 10 summary
 
@@ -552,3 +585,4 @@ Follow master prompt §26, with these gates:
 | 8 | pass | pass | 89/89 (incl. cart-store and reorder integration tests) | pass | 169 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-out paths only |
 | 9 | pass | pass | 105/105 (incl. concierge loop + controlled-tool integration tests) | pass | 177 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Chat UI tested against a mocked SSE stream; the live model is never called from E2E |
 | 10 | pass | pass | 109/109 (incl. knowledge retrieval tests) | pass | 177 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Knowledge guard/chunking verified on the live DB in rolled-back transactions |
+| 11 | pass | pass | 122/122 (incl. scoring + quiz action tests) | pass | 187 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Quiz E2E runs against the live catalog, incl. axe on quiz and results |
