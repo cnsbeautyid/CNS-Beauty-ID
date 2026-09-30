@@ -24,6 +24,8 @@ export type PlaceOrderRequest = {
   shipping: ShippingDetails;
   notes?: string;
   expiryHours: number;
+  /** Loyalty points to redeem; place_order debits them in the same transaction. */
+  points?: number;
 };
 
 export type PlaceOrderResult =
@@ -56,7 +58,7 @@ export async function placeOrder(request: PlaceOrderRequest): Promise<PlaceOrder
     },
     p_user_id: request.userId,
     p_coupon_code: request.cart.coupon,
-    p_points: 0,
+    p_points: request.points ?? 0,
     p_source: "web",
     p_notes: request.notes,
   });

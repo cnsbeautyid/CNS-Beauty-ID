@@ -70,7 +70,15 @@ export default async function AccountDashboardPage() {
       </Panel>
 
       <div className="grid gap-6 tablet:grid-cols-2">
-        <Panel icon={<Star {...ICON} />} title="CNS Rewards">
+        <Panel
+          icon={<Star {...ICON} />}
+          title="CNS Rewards"
+          action={
+            <Link href={ROUTES.account.loyalty} className="text-body-s font-medium underline underline-offset-4">
+              Detail
+            </Link>
+          }
+        >
           {loyalty ? (
             <p className="text-body-s text-text-secondary">
               <span className="block font-display text-h3 text-text-primary">{loyalty.balance.toLocaleString("id-ID")} poin</span>

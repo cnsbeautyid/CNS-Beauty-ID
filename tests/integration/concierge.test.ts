@@ -25,6 +25,11 @@ vi.mock("@/services/content/contact", () => ({ getPublicContact: mocks.getPublic
 vi.mock("@/services/ai/knowledge", () => ({ searchKnowledge: mocks.searchKnowledge }));
 vi.mock("@/services/quiz/quiz", () => ({ getQuizOptions: async () => null, getOwnBeautyProfile: mocks.getOwnBeautyProfile }));
 vi.mock("@/services/routine/routine", () => ({ getOwnRoutine: mocks.getOwnRoutine }));
+vi.mock("@/services/loyalty/loyalty", () => ({
+  getOwnLoyaltyAccount: async () => ({ balance: 2500, lifetimePoints: 2500, tierId: null }),
+  getLoyaltyProgramme: async () => ({ tiers: [{ id: "g", slug: "glow", name: "Glow", minLifetimePoints: 0, benefits: [] }], rules: [], rewards: [], settings: { pointValue: 1, maxRedeemPercent: 50 } }),
+  listOwnTransactions: async () => ({ items: [{ id: "t", event: "purchase", points: 2500, description: null, createdAt: "2026-09-30T07:05:00Z" }], hasMore: false }),
+}));
 
 const { runConcierge, MAX_TOOL_ROUNDS } = await import("@/services/ai/concierge");
 const { CONCIERGE_TOOLS } = await import("@/services/ai/tools");
@@ -218,5 +223,13 @@ describe("get_my_profile_and_routine", () => {
       skin_profile: { skin_type: "Kering", concerns: ["Kulit Kusam"], sensitivity: "Kadang sensitif", current_routine: ["Cleanse"] },
       routine: { morning: [{ step: "Moisturize", product: "Licorice Moisturizer" }], evening: [{ step: "Cleanse", product: "produk milik pelanggan" }] },
     });
+  });
+});
+
+describe("get_my_loyalty", () => {
+  it("never reveals points to guests and reads the ledger for customers", async () => {
+    expect(JSON.parse((await CONCIERGE_TOOLS.run("get_my_loyalty", "{}", { userId: null })).content)).toMatchObject({ requires_login: true });
+    const outcome = JSON.parse((await CONCIERGE_TOOLS.run("get_my_loyalty", "{}", { userId: "user-1" })).content);
+    expect(outcome).toMatchObject({ balance: 2500, tier: "Glow", max_redeem_percent_at_checkout: 50, recent_activity: [{ type: "Belanja", points: 2500 }] });
   });
 });

@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 
-import { orderPath, productPath } from "@/constants/routes";
+import { orderPath, productPath, ROUTES } from "@/constants/routes";
 import { formatDateTime, formatIDR } from "@/lib/utils/format";
 import { whatsappUrl } from "@/lib/utils/whatsapp";
 import { quoteCart } from "@/services/cart/quote";
@@ -13,6 +13,8 @@ import { listProducts } from "@/services/catalog/products";
 import { getPublicContact } from "@/services/content/contact";
 import { getOwnOrder } from "@/services/order/order";
 import { getOwnBeautyProfile, getQuizOptions } from "@/services/quiz/quiz";
+import { getLoyaltyProgramme, getOwnLoyaltyAccount, listOwnTransactions } from "@/services/loyalty/loyalty";
+import { eventLabel, tierProgress } from "@/services/loyalty/model";
 import { getOwnRoutine } from "@/services/routine/routine";
 import { orderStatusInfo } from "@/services/order/status";
 import type { ProductCardData } from "@/types/product";
@@ -285,6 +287,31 @@ const getMyProfileAndRoutine: ToolSpec<z.ZodType<Record<string, never>>> = {
   },
 };
 
+const getMyLoyalty: ToolSpec<z.ZodType<Record<string, never>>> = {
+  description: "Lihat saldo poin CNS Rewards, tingkat, dan aktivitas poin terakhir milik pelanggan yang sedang masuk akun. Jangan menebak saldo.",
+  statusLabel: "Memeriksa poin CNS Rewards…",
+  parameters: { type: "object", properties: {}, additionalProperties: false },
+  input: z.object({}).strict(),
+  async run(_input, context) {
+    if (!context.userId) return { content: json({ requires_login: true, message: "Pelanggan perlu masuk akun untuk melihat poin." }) };
+    // RLS: the signed-in customer's own ledger only.
+    const [account, programme, history] = await Promise.all([getOwnLoyaltyAccount(), getLoyaltyProgramme(), listOwnTransactions()]);
+    if (!account || !programme) return { content: json({ error: "Poin belum dapat dibaca saat ini." }) };
+    const progress = tierProgress(account.lifetimePoints, programme.tiers);
+    return {
+      content: json({
+        balance: account.balance,
+        tier: progress.current?.name,
+        points_to_next_tier: progress.next ? { tier: progress.next.name, remaining: progress.remaining } : undefined,
+        point_value: programme.settings.pointValue > 0 ? formatIDR(programme.settings.pointValue) : undefined,
+        max_redeem_percent_at_checkout: programme.settings.maxRedeemPercent,
+        recent_activity: (history?.items ?? []).slice(0, 5).map((entry) => ({ type: eventLabel(entry.event), points: entry.points, date: formatDateTime(entry.createdAt) })),
+        url: ROUTES.account.loyalty,
+      }),
+    };
+  },
+};
+
 const SPECS = {
   search_products: searchProducts,
   get_product: getProduct,
@@ -293,6 +320,7 @@ const SPECS = {
   request_human_help: requestHumanHelp,
   search_knowledge: searchKnowledgeTool,
   get_my_profile_and_routine: getMyProfileAndRoutine,
+  get_my_loyalty: getMyLoyalty,
 } as const satisfies Record<string, ToolSpec<z.ZodType>>;
 
 export type ToolName = keyof typeof SPECS;

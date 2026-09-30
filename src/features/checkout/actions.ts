@@ -55,7 +55,7 @@ export async function placeOrderAction(values: CheckoutValues): Promise<Checkout
   }
   if (cart.items.length === 0) return fail("empty", "Keranjangmu kosong.");
 
-  const quoted = await quoteCart(cart, user.id);
+  const quoted = await quoteCart(cart, user.id, input.points);
   if (quoted.status === "unavailable") return fail("unavailable", "Checkout belum dapat diproses saat ini. Silakan pesan melalui WhatsApp.");
   if (quoted.status !== "ok") return fail("error", "Total belanja belum dapat dihitung. Silakan coba lagi.");
   if (quoted.quote.errors.length > 0) return fail("rejected", describe(quoted.quote.errors));
@@ -71,6 +71,7 @@ export async function placeOrderAction(values: CheckoutValues): Promise<Checkout
     shipping: input.shipping,
     notes: input.notes,
     expiryHours: payment.expiryHours,
+    points: quoted.quote.pointsApplied,
   });
 
   switch (result.status) {

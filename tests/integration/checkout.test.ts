@@ -95,7 +95,7 @@ describe("placeOrderAction", () => {
       placeOrderAction({ shipping, expectedTotal: 320000, saveAddress: true, ...({ userId: "attacker" } as object) }),
     ).rejects.toThrow("REDIRECT:/account/orders/CNS-260930-00001");
 
-    expect(mocks.quoteCart).toHaveBeenCalledWith(CART, USER.id);
+    expect(mocks.quoteCart).toHaveBeenCalledWith(CART, USER.id, 0);
     expect(mocks.rpc.mock.calls[0]?.[0]).toBe("place_order");
     expect(mocks.rpc.mock.calls[0]?.[1]).toMatchObject({
       p_user_id: USER.id,
@@ -107,6 +107,22 @@ describe("placeOrderAction", () => {
     expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ order_id: ORDER_ID, provider: "manual", amount: 320000, status: "pending" }));
     expect(mocks.writeCart).toHaveBeenCalledWith({ v: 1, items: [] });
     expect(mocks.saveAddress).toHaveBeenCalledWith(USER.id, shipping, []);
+  });
+
+  it("re-quotes with the chosen points and redeems what the quote applied", async () => {
+    mocks.quoteCart.mockResolvedValue(quote({ total: 270000, pointsApplied: 50000, pointsDiscount: 50000 }));
+    mocks.rpc.mockResolvedValue({ data: { ok: true, order_id: ORDER_ID, order_number: "CNS-260930-00002", total: 270000 }, error: null });
+    mocks.insert.mockResolvedValue({ error: null });
+
+    await expect(placeOrderAction({ shipping, points: 50000, expectedTotal: 270000 })).rejects.toThrow("REDIRECT:");
+    expect(mocks.quoteCart).toHaveBeenCalledWith(CART, USER.id, 50000);
+    expect(mocks.rpc.mock.calls[0]?.[1]).toMatchObject({ p_points: 50000 });
+  });
+
+  it("rejects negative or absurd point requests", async () => {
+    expect(await placeOrderAction({ shipping, points: -5, expectedTotal: 320000 })).toMatchObject({ code: "invalid" });
+    expect(await placeOrderAction({ shipping, points: 1.5, expectedTotal: 320000 })).toMatchObject({ code: "invalid" });
+    expect(mocks.quoteCart).not.toHaveBeenCalled();
   });
 
   it("reports a stock race as inventory unavailable and keeps the cart", async () => {
