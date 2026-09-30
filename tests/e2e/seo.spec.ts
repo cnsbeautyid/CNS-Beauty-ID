@@ -41,6 +41,16 @@ test.describe("SEO endpoints", () => {
     expect(types).toEqual(expect.arrayContaining(["Organization", "WebSite"]));
   });
 
+  test("product pages always have a share image and the site name", async ({ page, request }) => {
+    const sitemap = await (await request.get("/sitemap.xml")).text();
+    const productUrl = sitemap.match(/<loc>(https?:\/\/[^<]+\/produk\/[a-z0-9-]+)<\/loc>/)?.[1];
+    expect(productUrl).toBeTruthy();
+    await page.goto(new URL(productUrl!).pathname);
+    await expect(page.locator('meta[property="og:image"]').first()).toHaveAttribute("content", /.+/);
+    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "CNS Beauty");
+    await expect(page.locator('meta[name="twitter:image"]').first()).toHaveAttribute("content", /.+/);
+  });
+
   test("header and footer never link to pages that don't exist yet", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator('a[href="/artikel"], a[href="/paket"]')).toHaveCount(0);

@@ -16,7 +16,11 @@ export const FAQ_TOPICS = [
 
 const OTHER = { key: "other", label: "Lainnya" } as const;
 
-/** Approved FAQs ordered by topic and sort order. Null when the read fails. */
+/**
+ * Approved FAQs ordered by topic and sort order. Null when Supabase isn't
+ * configured; throws on a read error so a regenerating page keeps its last
+ * good version instead of caching an error.
+ */
 export async function getPublicFaqs(): Promise<FaqItem[] | null> {
   const db = createPublicClient();
   if (!db) return null;
@@ -29,7 +33,7 @@ export async function getPublicFaqs(): Promise<FaqItem[] | null> {
     .range(0, 199);
   if (error) {
     console.error("[content] getPublicFaqs failed", error);
-    return null;
+    throw new Error("Public FAQs could not be read.");
   }
   return (data ?? []).map((row) => ({ id: row.id, question: row.question, answer: row.answer, topic: row.topic ?? OTHER.key }));
 }

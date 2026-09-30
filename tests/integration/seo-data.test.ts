@@ -86,9 +86,9 @@ describe("getPublicFaqs", () => {
     ]);
   });
 
-  it("returns null when the read fails", async () => {
+  it("throws when the read fails, so a cached good page is kept instead of an error page", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     db.error = { message: "down" };
-    expect(await getPublicFaqs()).toBeNull();
+    await expect(getPublicFaqs()).rejects.toThrow();
   });
 });

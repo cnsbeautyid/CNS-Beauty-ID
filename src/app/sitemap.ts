@@ -13,7 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     listSitemapProducts(),
     getCatalogFacets(),
     getPublishedTestimonials({ limit: 1 }),
-    getPublicFaqs(),
+    getPublicFaqs().catch(() => null),
   ]);
   return buildSitemap({
     siteUrl: clientEnv.NEXT_PUBLIC_SITE_URL,

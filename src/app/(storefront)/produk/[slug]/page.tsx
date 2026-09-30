@@ -22,6 +22,7 @@ import {
   UsageSection,
 } from "@/features/product-detail/product-sections";
 import { PurchasePanel, StickyCommerceBar } from "@/features/product-detail/purchase-panel";
+import { productShareMetadata } from "@/lib/seo/share";
 import { breadcrumbJsonLd, productBreadcrumbs, productJsonLd } from "@/lib/seo/structured-data";
 import {
   getActiveProductSlugs,
@@ -50,12 +51,7 @@ export async function generateMetadata({ params }: PageProps<"/produk/[slug]">):
     title: product.name,
     description,
     alternates: { canonical: productPath(product.slug) },
-    openGraph: {
-      type: "website",
-      title: product.name,
-      description,
-      images: product.images.slice(0, 1).map((image) => ({ url: image.src, alt: image.alt })),
-    },
+    ...productShareMetadata({ name: product.name, description, images: product.images }),
   };
 }
 
