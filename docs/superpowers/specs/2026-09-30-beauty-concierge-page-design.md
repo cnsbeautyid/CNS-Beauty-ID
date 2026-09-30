@@ -58,7 +58,7 @@ Identity comes from the session. The rail takes no user id from the request.
 | Signed in, has a skin profile | Skin type and concerns; AM/PM routine step counts with a link to `/account/routine` (or a "Buat routine" link when there's no routine); points balance and tier; personal prompt chips ("Konsultasikan routine saya", "Produk untuk concern saya") |
 | Signed in, no skin profile | Skin Quiz CTA (`/skin-quiz`); general prompt chips |
 | Signed out | Skin Quiz CTA; sign-in link to `/masuk?next=/beauty-concierge`; one line saying that signing in lets the AI use your skin profile |
-| Any read fails | Falls back to the signed-out view; the chat is unaffected |
+| Signed in, profile read fails | The "signed in, no profile" view (never a sign-in link for someone already signed in). A failed routine or points read hides only that row. The chat is unaffected |
 
 The rail only displays data. It sends nothing to the AI: the existing tools (`get_my_profile_and_routine`, `get_my_loyalty`) already read this data server-side when the model needs it.
 
@@ -66,9 +66,10 @@ The rail streams in behind `<Suspense>`, with a skeleton the same size as the ra
 
 ### Layout
 
-- **Desktop (≥1024px):** a two-column grid.
-  - The chat takes about two-thirds, in a card with the AI surface color (`bg-ai-surface`) and height `calc(100dvh - header)`. Its log scrolls inside the card.
-  - The rail takes about one-third and is sticky.
+- **Desktop (≥1024px):** a three-column grid, with the rail first in both DOM order and visual order, so reading order and focus order match.
+  - The rail takes one column on the left and is sticky.
+  - The chat takes two columns, in a card with the AI surface color (`bg-ai-surface`) and a height token `--ai-page-chat-height: min(48rem, calc(100dvh - 8rem))` added to `globals.css`. Its log scrolls inside the card.
+- **Rail on each breakpoint:** the rail body renders twice from the same server data: inside `<details class="desktop:hidden">` and inside `<div class="hidden desktop:block">`. `<details>` can't be forced open by CSS in every browser, and the hidden copy is `display: none`, so assistive tech only ever meets one.
 - **Mobile and tablet (<1024px):**
   - The rail collapses into a `<details>` whose summary is one line (for example "Profil kulitmu · 2 concern", or "Kenali kulitmu" when signed out).
   - The chat sits below at full width, with the composer pinned to the bottom of the chat card.
@@ -90,7 +91,7 @@ The rail streams in behind `<Suspense>`, with a skeleton the same size as the ra
 - the `role="log"` region with `aria-live="polite"`, `aria-relevant="additions text"` and `aria-busy={pending}`;
 - the greeting, messages, thinking/tool-status indicator, product cards, and the WhatsApp or contact handoff;
 - the quick prompts, shown only before the first message;
-- the `sr-only` status line, input, Stop button and disclaimer;
+- the `sr-only` status line, input, Stop button and disclaimer (`AIInput` gains optional `id` and `autoFocus` props; the panel keeps `autoFocus`, the page turns it off);
 - auto-scroll of the log while a reply streams.
 
 It takes three props:
@@ -135,6 +136,8 @@ The panel's behavior and markup must not change. The existing panel E2E tests ar
 Zustand's `persist` middleware (part of `zustand`, no new dependency) on `useAIStore`:
 
 - **Storage:** `sessionStorage`, key `cns-ai-conversation`, `version: 1`, through a `createJSONStorage` wrapper whose `getItem`/`setItem`/`removeItem` catch errors. Blocked storage behaves the way the store does today.
+- **Writes wait for hydration.** Zustand's `persist` writes on every `set()`, even before `rehydrate()` (checked in `node_modules/zustand/esm/middleware.mjs`). The page's `setPageContext` runs before `AIPanel`'s rehydrate effect, so without a gate it would overwrite the saved conversation with an empty one. The storage wrapper ignores `setItem` until `onRehydrateStorage`'s completion callback opens it.
+- **Validation on restore:** stored data is parsed with Zod (message shape, `https://` handoff URLs only, UUID conversation id, at most 20 messages). Anything invalid is discarded and the conversation starts empty.
 - **`partialize`:** `conversationId` and the last 20 messages (the API's `MAX_HISTORY` window), each with `content`, `products`, `handoffUrl` and `state`. `pending`, `statusLabel` and `pageContext` are not stored.
 - **Mid-stream reload:** a message saved with `state: "streaming"` is restored as `state: "error"`, with content `"Jawaban dihentikan."` when it is empty. `send()` never sends it back as context.
 - **Hydration:** `skipHydration: true`, and one `useAIStore.persist.rehydrate()` in a client effect inside `AIPanel`, which is mounted on every storefront page. The server HTML and the first client render then match (greeting only).
