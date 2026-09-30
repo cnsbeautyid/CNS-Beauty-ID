@@ -163,7 +163,7 @@ const conciergeReply = [
 const sse = (events: object[]) => events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join("");
 
 test.describe("Beauty Concierge page", () => {
-  test("streams a reply inline, sends the concierge page context, and hides the launcher", async ({ page }) => {
+  test("streams a reply inline, sends the concierge page context, and hides the launcher", async ({ page, isMobile }) => {
     let requestBody: unknown;
     await page.route("**/api/ai/chat", async (route) => {
       requestBody = route.request().postDataJSON();
@@ -181,6 +181,9 @@ test.describe("Beauty Concierge page", () => {
     const log = chat.getByRole("log");
     await expect(log).toContainText("Ini pilihan untuk kulit kusam.");
     await expect(log.getByRole("link", { name: "Licorice Moisturizer" })).toHaveAttribute("href", "/produk/licorice-moisturizer-skin-glow");
+    // Phones scroll the cards sideways; two columns from tablet width.
+    const cards = log.getByRole("list", { name: "Rekomendasi produk" });
+    expect(await cards.evaluate((element) => getComputedStyle(element).display)).toBe(isMobile ? "flex" : "grid");
     expect(requestBody).toEqual({
       messages: [{ role: "user", content: "Produk apa yang cocok untuk kulit kusam?" }],
       pageContext: { pageType: "concierge" },

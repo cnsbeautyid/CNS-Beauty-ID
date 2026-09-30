@@ -6,6 +6,7 @@ import { useEffect, useId, useRef } from "react";
 import { track } from "@/lib/analytics/client";
 import { IconButton } from "@/components/ui/icon-button";
 import { AI_COPY } from "@/config/ai";
+import { useConversationSession } from "@/features/ai/use-conversation-session";
 import { useAIStore } from "@/stores/ai-store";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -26,11 +27,10 @@ export function AIPanel() {
   const hasConversation = useAIStore((state) => state.messages.length > 0);
   const reset = useAIStore((state) => state.reset);
 
-  // Mounted on every storefront page: restore this tab's conversation once,
-  // after hydration so server HTML and the first client render match.
-  useEffect(() => {
-    void useAIStore.persist.rehydrate();
-  }, []);
+  // Mounted on every storefront page: restore this tab's conversation once
+  // (after hydration, so server HTML and the first client render match) and
+  // forget it when the signed-in customer changes.
+  useConversationSession();
 
   useEffect(() => {
     const dialog = ref.current;

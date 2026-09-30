@@ -17,7 +17,7 @@ export function ConciergeChat() {
   return (
     <section
       aria-labelledby={TITLE_ID}
-      className="flex h-(--ai-page-chat-height) min-h-[28rem] flex-col overflow-hidden rounded-lg border border-border bg-ai-surface"
+      className="flex h-(--ai-page-chat-height) min-h-(--ai-page-chat-min-height) flex-col overflow-hidden rounded-lg border border-border bg-ai-surface"
     >
       <div className="flex items-center gap-3 border-b border-border px-4 py-3 tablet:px-6">
         <span aria-hidden className="flex size-9 items-center justify-center rounded-pill bg-background text-ai-accent">

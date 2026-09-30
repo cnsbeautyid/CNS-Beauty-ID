@@ -9,7 +9,8 @@ import type { AIQuickAction } from "@/types/ai";
 export type RailRoutine = { am: number; pm: number };
 
 export type RailInput = {
-  signedIn: boolean;
+  /** "unknown": the session check failed; never shown as signed out. */
+  viewer: "signed-in" | "signed-out" | "unknown";
   /** undefined = read failed, null = no profile yet. */
   profile: SavedBeautyProfile | null | undefined;
   routine: RailRoutine | null | undefined;
@@ -32,8 +33,10 @@ const GENERAL_PROMPT_IDS = ["know-my-skin", "find-product", "build-routine"];
 const GENERAL_PROMPTS = AI_QUICK_ACTIONS.filter((action) => GENERAL_PROMPT_IDS.includes(action.id));
 const ORDER_STATUS = AI_QUICK_ACTIONS.filter((action) => action.id === "order-status");
 
-export function buildRailModel({ signedIn, profile, routine, loyalty }: RailInput): RailModel {
-  if (!signedIn) return { kind: "signed-out", summary: "Kenali kulitmu", prompts: GENERAL_PROMPTS };
+export function buildRailModel({ viewer, profile, routine, loyalty }: RailInput): RailModel {
+  if (viewer === "signed-out") return { kind: "signed-out", summary: "Kenali kulitmu", prompts: GENERAL_PROMPTS };
+  // Unknown session: no personal data, and no sign-in prompt for someone who may be signed in.
+  if (viewer === "unknown") return { kind: "no-profile", summary: "Kenali kulitmu", prompts: GENERAL_PROMPTS, loyalty: null };
   // A failed profile read looks like "no profile": never offer sign-in to a signed-in customer.
   if (!profile) return { kind: "no-profile", summary: "Kenali kulitmu", prompts: GENERAL_PROMPTS, loyalty };
 

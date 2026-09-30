@@ -7,7 +7,15 @@ import { ChatHttpError, pageTypeFromPath, streamChat } from "@/features/ai/chat-
 import { MAX_HISTORY, type AIProductCard, type ChatRequest, type ConciergeEvent } from "@/services/ai/protocol";
 import type { AIPageContext } from "@/types/ai";
 
-import { AI_CONVERSATION_STORAGE_KEY, createGatedStorage, restorePersisted, STOPPED_REPLY, toPersisted } from "./ai-persistence";
+import {
+  AI_CONVERSATION_STORAGE_KEY,
+  createGatedStorage,
+  ownerKeyFor,
+  resolveOwner,
+  restorePersisted,
+  STOPPED_REPLY,
+  toPersisted,
+} from "./ai-persistence";
 
 export type ConciergeMessage = {
   id: string;
@@ -25,12 +33,16 @@ type AIState = {
   setPageContext: (context: AIPageContext | null) => void;
   messages: ConciergeMessage[];
   conversationId: string | null;
+  /** Hashed owner of the stored conversation (null: guest). */
+  ownerKey: string | null;
   pending: boolean;
   /** Label of the controlled tool currently running (never model reasoning). */
   statusLabel: string | null;
   send: (text: string) => Promise<void>;
   stop: () => void;
   reset: () => void;
+  /** Ties the conversation to the signed-in user; clears it for anyone else. */
+  syncOwner: (userId: string | null) => void;
 };
 
 let seq = 0;
@@ -96,6 +108,7 @@ export const useAIStore = create<AIState>()(
         setPageContext: (pageContext) => set({ pageContext }),
         messages: [],
         conversationId: null,
+        ownerKey: null,
         pending: false,
         statusLabel: null,
 
@@ -150,6 +163,14 @@ export const useAIStore = create<AIState>()(
           controller?.abort();
           set({ messages: [], conversationId: null, pending: false, statusLabel: null });
         },
+
+        syncOwner(userId) {
+          const owner = ownerKeyFor(userId);
+          const decision = resolveOwner(get().ownerKey, get().messages.length > 0, owner);
+          if (decision === "keep") return;
+          if (decision === "clear") controller?.abort();
+          set(decision === "clear" ? { messages: [], conversationId: null, pending: false, statusLabel: null, ownerKey: owner } : { ownerKey: owner });
+        },
       };
     },
     {
@@ -165,6 +186,12 @@ export const useAIStore = create<AIState>()(
     },
   ),
 );
+
+/** Restores this tab's conversation once; a later call never replaces what is in memory. */
+export function rehydrateConversationOnce(): Promise<void> | void {
+  if (useAIStore.persist.hasHydrated()) return;
+  return useAIStore.persist.rehydrate();
+}
 
 /** Forget the conversation on this device (used on sign-out). */
 export function clearStoredConversation(): void {

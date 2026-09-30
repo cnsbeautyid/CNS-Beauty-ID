@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/states";
 import { ROUTES } from "@/constants/routes";
-import { getSessionUserId } from "@/lib/auth/session";
+import { getSessionState } from "@/lib/auth/session";
 import { getLoyaltySummary, type LoyaltySummary } from "@/services/account/account";
 import { getOwnBeautyProfile, getQuizOptions } from "@/services/quiz/quiz";
 import { getOwnRoutine } from "@/services/routine/routine";
@@ -15,14 +15,14 @@ import { RailPromptChips } from "./rail-prompt-chips";
 const SIGN_IN_HREF = `${ROUTES.signIn}?next=${encodeURIComponent(ROUTES.beautyConcierge)}`;
 
 async function loadRailModel(): Promise<RailModel> {
-  const userId = await getSessionUserId();
-  if (!userId) return buildRailModel({ signedIn: false, profile: null, routine: null, loyalty: null });
+  const session = await getSessionState();
+  if (session.status !== "signed-in") return buildRailModel({ viewer: session.status, profile: null, routine: null, loyalty: null });
 
   // Every read runs as the customer; RLS is the authorization.
   const [options, routine, loyalty] = await Promise.all([getQuizOptions(), getOwnRoutine(), getLoyaltySummary()]);
   const profile = await getOwnBeautyProfile(options);
   return buildRailModel({
-    signedIn: true,
+    viewer: "signed-in",
     profile,
     routine: routine ? { am: routine.view.am.length, pm: routine.view.pm.length } : routine,
     loyalty,

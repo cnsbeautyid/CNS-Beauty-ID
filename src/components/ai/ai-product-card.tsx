@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 
 import { productPath } from "@/constants/routes";
 import { track } from "@/lib/analytics/client";
+import { cn } from "@/lib/utils/cn";
 import { formatIDR } from "@/lib/utils/format";
 import type { AIProductCard } from "@/services/ai/protocol";
 
@@ -36,10 +37,14 @@ export function AIProductCards({
   return (
     <ul
       aria-label="Rekomendasi produk"
-      className={layout === "grid" ? "grid grid-cols-2 gap-3" : "-mx-1 flex gap-3 overflow-x-auto px-1 pb-1"}
+      className={cn(
+        "-mx-1 flex gap-3 overflow-x-auto px-1 pb-1",
+        // Page layout: sideways scroll on phones, two columns from tablet width.
+        layout === "grid" && "tablet:mx-0 tablet:grid tablet:grid-cols-2 tablet:overflow-visible tablet:px-0 tablet:pb-0",
+      )}
     >
       {products.map((product) => (
-        <li key={product.slug} className={layout === "grid" ? "min-w-0" : "w-44 shrink-0"}>
+        <li key={product.slug} className={cn("w-44 shrink-0", layout === "grid" && "tablet:w-auto tablet:min-w-0 tablet:shrink")}>
           <article className="relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-background">
             <div className="relative aspect-[4/3] bg-brand-ivory">
               {product.imageUrl && (
@@ -47,7 +52,7 @@ export function AIProductCards({
                   src={product.imageUrl}
                   alt=""
                   fill
-                  sizes={layout === "grid" ? "(min-width: 64rem) 20rem, 45vw" : "176px"}
+                  sizes={layout === "grid" ? "(min-width: 64rem) 20rem, (min-width: 40rem) 45vw, 176px" : "176px"}
                   className="object-cover"
                 />
               )}
