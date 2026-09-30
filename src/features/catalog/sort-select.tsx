@@ -19,7 +19,7 @@ export function SortSelect({ basePath, query }: SortSelectProps) {
   const kept = (["q", "kebutuhan", "kulit", "harga"] as const).filter((key) => query[key]);
 
   return (
-    <Form action={basePath} scroll={false} className="flex items-center gap-2">
+    <Form action={basePath} scroll={false} className="flex flex-wrap items-center gap-2">
       {kept.map((key) => (
         <input key={key} type="hidden" name={key} value={query[key]} />
       ))}

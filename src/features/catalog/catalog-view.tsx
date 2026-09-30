@@ -76,7 +76,7 @@ export function CatalogView({ title, description, basePath, query, listing, face
               <p aria-live="polite" className="text-body-s text-text-secondary">
                 {listing.status === "ok" ? `${listing.total} produk` : " "}
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {facets && (
                   <div className="desktop:hidden">
                     <FilterDrawer key={buildCatalogHref(basePath, query)} activeCount={activeChips.length}>
