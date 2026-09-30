@@ -2,9 +2,41 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 8)
-- **Current phase:** Phase 8 Customer Account, done and validated
-- **Next phase:** Phase 9 AI Beauty Concierge (streaming chat, controlled tools)
+- **Last updated:** 2026-09-30 (Phase 9)
+- **Current phase:** Phase 9 AI Beauty Concierge, done and validated (waits for gateway credentials)
+- **Next phase:** Phase 10 RAG Knowledge (approved/published knowledge only)
+
+## Phase 9 summary
+
+Owner decisions (2026-09-30):
+- **LLM:** keep the existing **nara** gateway, model **agnes-2.5-flash**, called through its **OpenAI-compatible** `/chat/completions` API. There is no Anthropic/OpenAI SDK; the adapter uses `fetch`.
+- **Logging:** **log conversations** in the existing `ai_conversations` / `ai_messages` tables.
+
+- **`POST /api/ai/chat`:** SSE (`text/event-stream`).
+  - **Request guards:** same-origin only (403 otherwise), a 64 KB body limit, and a Zod-validated body. The body carries the visible transcript (at most 20 messages of 2,000 characters each, last one from the user) plus page context.
+  - **Rate limit:** 12 turns per minute per user or anonymous id. It's best effort and per instance; a shared store comes in Phase 21.
+  - **Identity** comes from the session only. Anonymous visitors get an httpOnly `cns_aid` cookie that ties their conversations to them.
+  - **Events:** `meta`, `status`, `text`, `products`, `handoff`, `unavailable`, `error`, `done`.
+  - **Without `LLM_BASE_URL` + `LLM_API_KEY`**, or with `settings.ai.enabled = false`, it answers "sedang tidak tersedia" and offers the WhatsApp team. It never fakes a reply.
+- **Concierge loop** (`src/services/ai/concierge.ts`): streams text, runs the tool calls, feeds the results back, and stops after 4 rounds.
+  - Product cards and the WhatsApp handoff come from **tool data**, never from model text.
+  - The system prompt forbids inventing prices, stock, orders, cart totals or claims, rules out medical diagnosis, and forbids revealing its instructions or reasoning. Page context is a separate hint, never authorization.
+- **Controlled tools** (`src/services/ai/tools.ts`): read-only, Zod-validated; invalid JSON or arguments go back to the model as an error result.
+  - `search_products` and `get_product` read the same catalog services as the storefront, so only approved copy is returned (claim governance).
+  - `get_cart` returns totals from `quote_cart` only.
+  - `get_order_status` requires sign-in and reads the order through RLS.
+  - `request_human_help` returns the WhatsApp link from `settings.contact` and marks the conversation `escalated`.
+- **Logging** (`src/services/ai/conversation.ts`, service role):
+  - A conversation row: `agent = beauty_concierge`, `provider = nara`, the model, and `intake.page_type`.
+  - One message row per user and assistant turn, with tokens and latency.
+  - A conversation is reused only when it belongs to the caller. Logging failures never break a reply.
+- **UI:** the concierge panel keeps its conversation in Zustand (AI state, separate from UI state), with:
+  - streaming bubbles and a thinking/tool-status indicator (tool labels only, never reasoning)
+  - recommendation cards and the WhatsApp handoff
+  - Stop and New conversation buttons
+  - an honest error fallback
+  - `aria-busy` on the polite live log, so screen readers hear the finished reply rather than every token
+- **Not yet:** RAG knowledge (Phase 10), and analytics events such as `AI_OPENED` / `AI_MESSAGE_SENT` (Phase 16).
 
 ## Phase 8 summary
 
@@ -475,3 +507,4 @@ Follow master prompt §26, with these gates:
 | 6 | pass | pass | 58/58 | pass | 132 pass, 12 skipped (device-specific; coupon test waits for the service-role key). Includes axe on `/cart` (empty and with a line) |
 | 7 | pass | pass | 75/75 (incl. checkout action integration tests) | pass | 152 pass, 12 skipped (device-specific; coupon test waits for the service-role key). Signed-out/validation paths only; no accounts are created on live Auth |
 | 8 | pass | pass | 89/89 (incl. cart-store and reorder integration tests) | pass | 169 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-out paths only |
+| 9 | pass | pass | 105/105 (incl. concierge loop + controlled-tool integration tests) | pass | 177 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Chat UI tested against a mocked SSE stream; the live model is never called from E2E |

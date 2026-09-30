@@ -1,8 +1,8 @@
 "use client";
 
-import { MessageCircle, Sparkles, X } from "lucide-react";
+import { MessageCircle, RotateCcw, Sparkles, Square, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
 
 import { IconButton } from "@/components/ui/icon-button";
 import { AI_COPY, AI_QUICK_ACTIONS } from "@/config/ai";
@@ -11,24 +11,29 @@ import { useAIStore } from "@/stores/ai-store";
 import { useUIStore } from "@/stores/ui-store";
 
 import { AIInput } from "./ai-input";
-import { AIMessage, type AIChatMessage } from "./ai-message";
+import { AIMessage } from "./ai-message";
+import { AIProductCards } from "./ai-product-card";
+import { AIThinkingIndicator } from "./ai-thinking-indicator";
 
 const DESKTOP_QUERY = "(min-width: 64rem)";
 
-let messageSeq = 0;
-const nextId = () => `m${++messageSeq}`;
-
 /**
- * Concierge shell. Floating non-modal panel on desktop; full-screen modal on
- * smaller screens. Replies are a fixed "not yet available" notice with a
- * human handoff until the streaming backend lands in Phase 9.
+ * Beauty Concierge. Floating non-modal panel on desktop; full-screen modal on
+ * smaller screens. Replies stream from /api/ai/chat; product cards and the
+ * WhatsApp handoff come from tool data, never from model text.
  */
 export function AIPanel() {
   const open = useUIStore((state) => state.aiPanelOpen);
   const closeAIPanel = useUIStore((state) => state.closeAIPanel);
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
-  const [messages, setMessages] = useState<AIChatMessage[]>([]);
+  const messages = useAIStore((state) => state.messages);
+  const pending = useAIStore((state) => state.pending);
+  const statusLabel = useAIStore((state) => state.statusLabel);
+  const send = useAIStore((state) => state.send);
+  const stop = useAIStore((state) => state.stop);
+  const reset = useAIStore((state) => state.reset);
+  const logRef = useRef<HTMLDivElement>(null);
   // In the store so "ask AI" buttons elsewhere can pre-fill a question.
   const draft = useUIStore((state) => state.aiDraft);
   const setDraft = useUIStore((state) => state.setAIDraft);
@@ -52,15 +57,16 @@ export function AIPanel() {
     if (target?.isConnected) target.focus();
   }, [open]);
 
-  const send = (text: string) => {
-    setMessages((current) => [
-      ...current,
-      { id: nextId(), role: "user", content: text },
-      { id: nextId(), role: "assistant", content: AI_COPY.unavailable },
-    ]);
-  };
+  // Keep the newest content in view while a reply streams in.
+  const lastContent = messages.at(-1)?.content;
+  useEffect(() => {
+    const log = logRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
+  }, [messages.length, lastContent, statusLabel]);
 
   const hasConversation = messages.length > 0;
+  const offeredWhatsApp = messages.some((message) => message.handoffUrl);
+  const close = () => ref.current?.close();
 
   return (
     <dialog
@@ -87,6 +93,9 @@ export function AIPanel() {
             </h2>
             <p className="text-caption text-text-secondary">{AI_COPY.role}</p>
           </div>
+          {hasConversation && (
+            <IconButton label="Mulai percakapan baru" icon={<RotateCcw aria-hidden className="size-4" />} onClick={reset} />
+          )}
           <IconButton
             label="Tutup CNS Beauty AI"
             icon={<X aria-hidden className="size-5" />}
@@ -100,17 +109,43 @@ export function AIPanel() {
           </p>
         )}
 
-        <div role="log" aria-live="polite" aria-relevant="additions" className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-5">
+        {/* aria-busy holds announcements until a streamed reply is complete. */}
+        <div
+          ref={logRef}
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions text"
+          aria-busy={pending}
+          className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-5"
+        >
           <AIMessage role="assistant">{AI_COPY.greeting}</AIMessage>
           {messages.map((message) => (
-            <AIMessage key={message.id} role={message.role}>
-              {message.content}
-            </AIMessage>
+            <div key={message.id} className="flex flex-col gap-2">
+              {message.content && (
+                <AIMessage role={message.role} notice={message.state === "error" || message.state === "unavailable"}>
+                  {message.content}
+                </AIMessage>
+              )}
+              {message.state === "streaming" && (!message.content || statusLabel) && <AIThinkingIndicator label={statusLabel} />}
+              {message.products.length > 0 && <AIProductCards products={message.products} onNavigate={close} />}
+              {message.handoffUrl && (
+                <a
+                  href={message.handoffUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 self-start rounded-pill border border-primary px-4 py-2 text-body-s font-medium text-text-primary transition-colors duration-(--duration-base) hover:bg-secondary"
+                >
+                  <MessageCircle aria-hidden className="size-4" />
+                  Chat tim CNS Beauty di WhatsApp
+                  <span className="sr-only">(membuka WhatsApp)</span>
+                </a>
+              )}
+            </div>
           ))}
-          {hasConversation && (
+          {hasConversation && !offeredWhatsApp && (
             <Link
               href={ROUTES.contact}
-              onClick={() => ref.current?.close()}
+              onClick={close}
               className="inline-flex items-center gap-2 self-start text-body-s font-medium text-brand-cocoa underline underline-offset-4"
             >
               <MessageCircle aria-hidden className="size-4" />
@@ -135,7 +170,15 @@ export function AIPanel() {
               ))}
             </ul>
           )}
-          <AIInput value={draft} onValueChange={setDraft} onSubmit={send} />
+          <p role="status" className="sr-only">
+            {statusLabel ?? (pending ? "CNS Beauty AI sedang menyiapkan jawaban." : "")}
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <AIInput value={draft} onValueChange={setDraft} onSubmit={(text) => void send(text)} disabled={pending} />
+            </div>
+            {pending && <IconButton label="Hentikan jawaban" icon={<Square aria-hidden className="size-4" />} onClick={stop} />}
+          </div>
           <p className="text-caption text-text-secondary">{AI_COPY.disclaimer}</p>
         </div>
       </div>

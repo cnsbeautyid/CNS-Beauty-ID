@@ -9,6 +9,8 @@ export function getServerEnv(): ServerEnv {
   cached ??= parseServerEnv({
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     LLM_API_KEY: process.env.LLM_API_KEY,
+    LLM_BASE_URL: process.env.LLM_BASE_URL,
+    LLM_MODEL: process.env.LLM_MODEL,
     PAYMENT_SECRET: process.env.PAYMENT_SECRET,
     WEBHOOK_SECRET: process.env.WEBHOOK_SECRET,
     ADMIN_SECRET: process.env.ADMIN_SECRET,
