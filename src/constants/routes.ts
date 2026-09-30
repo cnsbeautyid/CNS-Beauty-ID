@@ -75,3 +75,5 @@ export const productCategoryPath = (slug: string) => `${ROUTES.products}/kategor
 export const articlePath = (slug: string) => `${ROUTES.journal}/${segment(slug)}`;
 export const orderPath = (orderNumber: string) =>
   `${ROUTES.account.orders}/${encodeURIComponent(orderNumber)}`;
+export const adminOrderPath = (orderNumber: string) => `${ROUTES.admin.orders}/${encodeURIComponent(orderNumber)}`;
+export const adminProductPath = (productId: string) => `${ROUTES.admin.products}/${encodeURIComponent(productId)}`;

@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/choice";
@@ -26,14 +26,14 @@ export function ApplicationForm({ defaultName }: { defaultName?: string }) {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     formState: { errors },
   } = useForm<ApplicationValues, unknown, ApplicationInput>({
     resolver: zodResolver(applicationSchema),
     defaultValues: { memberType: "reseller", desiredLevel: 1, fullName: defaultName ?? "" },
   });
-  const memberType = watch("memberType");
+  const memberType = useWatch({ control, name: "memberType" });
 
   const onSubmit = handleSubmit((values) =>
     startTransition(async () => {

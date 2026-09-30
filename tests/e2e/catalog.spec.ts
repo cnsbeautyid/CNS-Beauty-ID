@@ -47,9 +47,13 @@ test.describe("Catalog /produk", () => {
 
   test("search with no match shows an empty state", async ({ page }) => {
     await page.goto("/produk");
-    await page.getByRole("searchbox", { name: "Cari produk" }).fill("zzqqxx-tidak-ada");
-    await page.getByRole("button", { name: "Cari", exact: true }).click();
-    await expect(page).toHaveURL(/q=zzqqxx-tidak-ada/);
+    await waitForResults(page);
+    // Typing before hydration finishes can be reset by React; retry the whole step.
+    await expect(async () => {
+      await page.getByRole("searchbox", { name: "Cari produk" }).fill("zzqqxx-tidak-ada");
+      await page.getByRole("button", { name: "Cari", exact: true }).click();
+      await expect(page).toHaveURL(/q=zzqqxx-tidak-ada/, { timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
     await expect(page.getByText("Produk tidak ditemukan")).toBeVisible();
     await expect(page.getByRole("link", { name: "Hapus filter", exact: true })).toHaveAttribute("href", "/produk");
   });

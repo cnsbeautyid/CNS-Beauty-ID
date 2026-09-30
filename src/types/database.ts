@@ -65,6 +65,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          summary: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          summary?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          summary?: Json
+        }
+        Relationships: []
+      }
       ai_conversations: {
         Row: {
           agent: string
