@@ -59,7 +59,7 @@ Stop shipping about 155 kB (transferred) of JavaScript that every storefront pag
 
 `useConversationSession` keeps its behaviour: restore the conversation once, then clear it when the signed-in customer changes. The change:
 - It imports `@/lib/supabase/client` with `import()`.
-- It does so only after rehydration **and** once the browser is idle (`requestIdleCallback`, or a `setTimeout(…, 1500)` fallback). Nothing Supabase-related is fetched on first view.
+- It does so only after rehydration, **after the page's `load` event**, and once the browser is idle (`requestIdleCallback`, or a `setTimeout(…, 1500)` fallback). An idle callback can fire before `load`, which would put the client back into first load. Nothing Supabase-related is fetched on first view.
 - Unmounting before the import resolves cancels the subscription, as today.
 
 The same-tab sign-out button still clears the conversation synchronously (Phase 17 `SignOutForm`). Only cross-tab sign-out and session expiry are detected up to an idle period later.
@@ -91,7 +91,7 @@ The spec is written first and must fail on today's build.
 ## 5. Testing and validation
 
 - **Unchanged tests pinning behaviour:** `env.test.ts`, the protocol tests in `ai.test.ts`, and `ai-store-persist.test.ts`.
-- **New unit test:** `useConversationSession`'s module does not statically import `@/lib/supabase/client`. It subscribes only after rehydrate and idle, using a mocked dynamic import and fake timers, in the node environment by testing an extracted pure scheduler `scheduleAuthSync(start, idle)`.
+- **New unit test:** `useConversationSession`'s module does not statically import `@/lib/supabase/client`. It subscribes only after rehydrate and idle, using a mocked dynamic import and fake timers, in the node environment by testing an extracted pure scheduler `scheduleAfterLoadIdle(task, deps)` in `src/lib/utils/idle.ts`.
 - **New E2E:** `performance.spec.ts` (§3).
 - **Full validation:** `npm run validate` and the full Playwright suite, including the AI concierge and sign-out specs, with the server started with `ENABLE_DESIGN_PREVIEW=true`.
 - **Lighthouse:** before and after, as in §4.
