@@ -12,6 +12,8 @@ import { getProductBySlug } from "@/services/catalog/product-detail";
 import { listProducts } from "@/services/catalog/products";
 import { getPublicContact } from "@/services/content/contact";
 import { getOwnOrder } from "@/services/order/order";
+import { getOwnBeautyProfile, getQuizOptions } from "@/services/quiz/quiz";
+import { getOwnRoutine } from "@/services/routine/routine";
 import { orderStatusInfo } from "@/services/order/status";
 import type { ProductCardData } from "@/types/product";
 
@@ -258,6 +260,31 @@ const searchKnowledgeTool: ToolSpec<z.ZodType<{ query: string; category?: Knowle
   },
 };
 
+const getMyProfileAndRoutine: ToolSpec<z.ZodType<Record<string, never>>> = {
+  description:
+    "Ambil profil kulit (dari Skin Quiz) dan rutinitas tersimpan milik pelanggan yang sedang masuk akun, untuk saran yang personal. Bukan data medis.",
+  statusLabel: "Membaca profil kulit & rutinitasmu…",
+  parameters: { type: "object", properties: {}, additionalProperties: false },
+  input: z.object({}).strict(),
+  async run(_input, context) {
+    if (!context.userId) return { content: json({ requires_login: true, message: "Pelanggan perlu masuk akun agar profil dan rutinitasnya bisa dibaca." }) };
+    // RLS: the signed-in customer's own rows only.
+    const [profile, routine] = await Promise.all([getQuizOptions().then(getOwnBeautyProfile), getOwnRoutine()]);
+    const describe = (items: NonNullable<Awaited<ReturnType<typeof getOwnRoutine>>>["view"]["am"]) =>
+      items.map((item) => ({ step: item.step?.name, product: item.product?.card.name ?? (item.unavailable ? "produk tidak lagi tersedia" : "produk milik pelanggan") }));
+    return {
+      content: json({
+        skin_profile: profile
+          ? { skin_type: profile.skinType ?? "belum yakin", concerns: profile.concerns, sensitivity: profile.sensitivity, current_routine: profile.routine }
+          : profile === null
+            ? "Belum ada profil. Sarankan Skin Quiz."
+            : "Profil belum dapat dibaca.",
+        routine: routine ? { morning: describe(routine.view.am), evening: describe(routine.view.pm) } : routine === null ? "Belum ada rutinitas tersimpan." : "Rutinitas belum dapat dibaca.",
+      }),
+    };
+  },
+};
+
 const SPECS = {
   search_products: searchProducts,
   get_product: getProduct,
@@ -265,6 +292,7 @@ const SPECS = {
   get_order_status: getOrderStatus,
   request_human_help: requestHumanHelp,
   search_knowledge: searchKnowledgeTool,
+  get_my_profile_and_routine: getMyProfileAndRoutine,
 } as const satisfies Record<string, ToolSpec<z.ZodType>>;
 
 export type ToolName = keyof typeof SPECS;

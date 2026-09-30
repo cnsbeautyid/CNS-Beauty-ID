@@ -90,8 +90,18 @@ test.describe("Skin Quiz", () => {
     expect(await page.evaluate(() => window.innerWidth)).toBe(page.viewportSize()?.width);
   });
 
-  test("the skin profile page requires login", async ({ page }) => {
+  test("the skin profile and routine pages require login", async ({ page }) => {
     await page.goto("/account/skin-profile");
     await expect(page).toHaveURL(/\/masuk\?next=%2Faccount%2Fskin-profile$/);
+    await page.goto("/account/routine");
+    await expect(page).toHaveURL(/\/masuk\?next=%2Faccount%2Froutine$/);
+  });
+
+  test("saving the quiz routine asks guests to sign in", async ({ page }) => {
+    await answerQuiz(page);
+    const save = page.getByRole("button", { name: "Simpan sebagai rutinitas saya" });
+    test.skip((await save.count()) === 0, "No products matched, so there is no routine to save");
+    await save.click();
+    await expect(page).toHaveURL(/\/masuk\?next=%2Fskin-quiz$/);
   });
 });

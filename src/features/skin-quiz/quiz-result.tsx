@@ -16,6 +16,8 @@ import type { QuizResult } from "@/services/quiz/quiz";
 import type { QuizAnswers } from "@/services/quiz/schema";
 import { useQuizStore } from "@/stores/quiz-store";
 
+import { saveQuizRoutineAction } from "@/features/routine/actions";
+
 import { addRoutineToCartAction, saveSkinProfileAction } from "./actions";
 
 function RoutineColumn({ title, entries }: { title: string; entries: QuizResult["routine"]["am"] }) {
@@ -57,7 +59,7 @@ export function QuizResultView({ result, answers }: { result: QuizResult; answer
   const { saved, markSaved, reset } = useQuizStore();
   const setCartCount = useSetCartCount();
   const [pending, startTransition] = useTransition();
-  const [message, setMessage] = useState<{ ok: boolean; text: string; cart?: boolean }>();
+  const [message, setMessage] = useState<{ ok: boolean; text: string; cart?: boolean; routine?: boolean }>();
 
   const availableIds = result.products.filter((product) => product.card.availability !== "out_of_stock").map((product) => product.id);
   const { profile } = result;
@@ -77,6 +79,14 @@ export function QuizResultView({ result, answers }: { result: QuizResult; answer
         markSaved();
         return setMessage({ ok: true, text: "Profil kulit tersimpan di akunmu." });
       }
+      if (outcome.code === "unauthenticated") return router.push(`${ROUTES.signIn}?next=${encodeURIComponent(pathname)}`);
+      setMessage({ ok: false, text: outcome.message });
+    });
+
+  const saveRoutine = () =>
+    startTransition(async () => {
+      const outcome = await saveQuizRoutineAction(answers);
+      if (outcome.ok) return setMessage({ ok: true, text: outcome.message, routine: true });
       if (outcome.code === "unauthenticated") return router.push(`${ROUTES.signIn}?next=${encodeURIComponent(pathname)}`);
       setMessage({ ok: false, text: outcome.message });
     });
@@ -175,6 +185,11 @@ export function QuizResultView({ result, answers }: { result: QuizResult; answer
               Simpan profil kulit
             </Button>
           )}
+          {result.products.length > 0 && (
+            <Button variant="secondary" onClick={saveRoutine} loading={pending}>
+              Simpan sebagai rutinitas saya
+            </Button>
+          )}
           <AskAIButton variant="ghost" prefill={prompt}>
             Tanya Beauty AI
           </AskAIButton>
@@ -184,6 +199,11 @@ export function QuizResultView({ result, answers }: { result: QuizResult; answer
         </div>
         <p role="status" className={message?.ok === false ? "text-body-s text-error" : "text-body-s text-success"}>
           {message?.text}{" "}
+          {message?.routine && (
+            <Link href={ROUTES.account.routine} className="font-medium text-text-primary underline underline-offset-4">
+              Lihat rutinitas
+            </Link>
+          )}
           {message?.cart && (
             <Link href={ROUTES.cart} className="font-medium text-text-primary underline underline-offset-4">
               Lihat keranjang
