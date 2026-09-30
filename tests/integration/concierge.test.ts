@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   quoteCart: vi.fn(),
   getPublicContact: vi.fn(),
   searchKnowledge: vi.fn(),
+  getOwnBeautyProfile: vi.fn(),
+  getOwnRoutine: vi.fn(),
 }));
 vi.mock("@/services/catalog/products", () => ({ listProducts: mocks.listProducts }));
 vi.mock("@/services/catalog/product-detail", () => ({ getProductBySlug: mocks.getProductBySlug }));
@@ -21,6 +23,8 @@ vi.mock("@/services/cart/store", () => ({ readCart: mocks.readCart }));
 vi.mock("@/services/cart/quote", () => ({ quoteCart: mocks.quoteCart }));
 vi.mock("@/services/content/contact", () => ({ getPublicContact: mocks.getPublicContact }));
 vi.mock("@/services/ai/knowledge", () => ({ searchKnowledge: mocks.searchKnowledge }));
+vi.mock("@/services/quiz/quiz", () => ({ getQuizOptions: async () => null, getOwnBeautyProfile: mocks.getOwnBeautyProfile }));
+vi.mock("@/services/routine/routine", () => ({ getOwnRoutine: mocks.getOwnRoutine }));
 
 const { runConcierge, MAX_TOOL_ROUNDS } = await import("@/services/ai/concierge");
 const { CONCIERGE_TOOLS } = await import("@/services/ai/tools");
@@ -191,5 +195,28 @@ describe("knowledge retrieval", () => {
     mocks.searchKnowledge.mockResolvedValue({ status: "unavailable" });
     expect(JSON.parse((await CONCIERGE_TOOLS.run("search_knowledge", '{"query":"brand"}', { userId: null })).content)).toMatchObject({ error: expect.any(String) });
     expect(JSON.parse((await CONCIERGE_TOOLS.run("search_knowledge", '{"query":"x","category":"secrets"}', { userId: null })).content).error).toMatch(/tidak valid/);
+  });
+});
+
+describe("get_my_profile_and_routine", () => {
+  it("is only available to signed-in customers", async () => {
+    const outcome = await CONCIERGE_TOOLS.run("get_my_profile_and_routine", "{}", { userId: null });
+    expect(JSON.parse(outcome.content)).toMatchObject({ requires_login: true });
+    expect(mocks.getOwnRoutine).not.toHaveBeenCalled();
+  });
+
+  it("summarizes the customer's own profile and routine", async () => {
+    mocks.getOwnBeautyProfile.mockResolvedValue({ skinType: "Kering", concerns: ["Kulit Kusam"], sensitivity: "Kadang sensitif", routine: ["Cleanse"] });
+    mocks.getOwnRoutine.mockResolvedValue({
+      view: {
+        am: [{ step: { name: "Moisturize" }, product: { card: { name: "Licorice Moisturizer" } }, unavailable: false }],
+        pm: [{ step: { name: "Cleanse" }, product: null, unavailable: false }],
+      },
+    });
+    const outcome = await CONCIERGE_TOOLS.run("get_my_profile_and_routine", "{}", { userId: "user-1" });
+    expect(JSON.parse(outcome.content)).toEqual({
+      skin_profile: { skin_type: "Kering", concerns: ["Kulit Kusam"], sensitivity: "Kadang sensitif", current_routine: ["Cleanse"] },
+      routine: { morning: [{ step: "Moisturize", product: "Licorice Moisturizer" }], evening: [{ step: "Cleanse", product: "produk milik pelanggan" }] },
+    });
   });
 });

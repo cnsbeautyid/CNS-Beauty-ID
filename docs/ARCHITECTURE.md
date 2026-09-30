@@ -2,9 +2,23 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 11)
-- **Current phase:** Phase 11 Skin Quiz, done and validated
-- **Next phase:** Phase 12 Routine (personalized routine in the account)
+- **Last updated:** 2026-09-30 (Phase 12)
+- **Current phase:** Phase 12 Routine, done and validated
+- **Next phase:** Phase 13 Loyalty
+
+## Phase 12 summary
+
+- **`/account/routine`** (signed-in; RLS through `own_all_user_routines` / `own_all_user_routine_items`):
+  - Morning and evening lists ordered by `routine_steps`. "Both" items appear in each list.
+  - Each item shows the product link, a stock note, how-to-use from the catalog, and any note.
+  - Items are removable. A product that is no longer published shows as "sudah tidak tersedia".
+  - **"Tambahkan rutinitas ke keranjang"** adds the active, in-stock products (reusing `addRoutineToCartAction`).
+  - Beauty AI shortcut, and an empty state pointing to the Skin Quiz.
+- **Builder:** add a step with a CNS product for it (the step's own products listed first) or "Produk yang sudah saya punya". Choose morning, evening or both (sunscreen is morning only), with an optional note. Duplicates are rejected, and the product must be published.
+- **Quiz → routine:** "Simpan sebagai rutinitas saya" in the quiz result. The server recomputes the plan from the answers; a plan sent by the browser is never trusted. It replaces the routine's items, sets `source = 'ai'` (the recommendation engine) and links `ai_recommendation_id` to the logged run (`logRecommendation` now returns its id). Manual edits set `source = 'builder'`.
+- **One routine per customer** is shown: the most recently updated `user_routines` row.
+- **Concierge:** a new tool `get_my_profile_and_routine`, for signed-in customers only, reads their own skin profile and routine through RLS. The prompt uses it for personal advice and suggests the Skin Quiz when there's no profile.
+- **No migration.** Verified on the live DB inside a transaction that was rolled back: a customer can create their own routine and items, but can't create, see, add items to, or delete another customer's routine.
 
 ## Phase 11 summary
 
@@ -586,3 +600,4 @@ Follow master prompt §26, with these gates:
 | 9 | pass | pass | 105/105 (incl. concierge loop + controlled-tool integration tests) | pass | 177 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Chat UI tested against a mocked SSE stream; the live model is never called from E2E |
 | 10 | pass | pass | 109/109 (incl. knowledge retrieval tests) | pass | 177 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Knowledge guard/chunking verified on the live DB in rolled-back transactions |
 | 11 | pass | pass | 122/122 (incl. scoring + quiz action tests) | pass | 187 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Quiz E2E runs against the live catalog, incl. axe on quiz and results |
+| 12 | pass | pass | 133/133 (incl. routine model, routine actions, profile/routine AI tool) | pass | 189 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-in routine flows covered by integration tests + live RLS check |

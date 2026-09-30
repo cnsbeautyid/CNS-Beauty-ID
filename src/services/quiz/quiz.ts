@@ -138,9 +138,9 @@ export async function saveBeautyProfile(userId: string, answers: QuizAnswers, op
 }
 
 /** Audit trail of what was recommended and why (service role; customers read their own). */
-export async function logRecommendation(userId: string | null, answers: QuizAnswers, result: QuizResult): Promise<void> {
-  if (!getServerEnv().SUPABASE_SERVICE_ROLE_KEY) return;
-  const { error } = await createAdminClient()
+export async function logRecommendation(userId: string | null, answers: QuizAnswers, result: QuizResult): Promise<string | null> {
+  if (!getServerEnv().SUPABASE_SERVICE_ROLE_KEY) return null;
+  const { data, error } = await createAdminClient()
     .from("ai_recommendations")
     .insert({
       user_id: userId,
@@ -152,8 +152,11 @@ export async function logRecommendation(userId: string | null, answers: QuizAnsw
       },
       explanation: "Skin Quiz: rule-based ranking by catalog concern and skin-type mappings, routine step, budget and popularity.",
       scoring_version: SCORING_VERSION,
-    });
+    })
+    .select("id")
+    .single();
   if (error) console.error("[quiz] logRecommendation failed", error);
+  return data?.id ?? null;
 }
 
 export type SavedBeautyProfile = {
