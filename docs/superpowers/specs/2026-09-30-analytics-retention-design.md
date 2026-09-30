@@ -65,7 +65,7 @@ It returns `table (days_rolled_up integer, rows_upserted integer, rows_deleted i
    - `yesterday` = `(now() at time zone 'Asia/Jakarta')::date - 1`.
    - `from_day` = `max(day) - 2` from `analytics_daily_events`, a 2-day overlap for late or delayed inserts.
    - When the table is empty, `from_day` = the WIB day of the oldest raw event (backfill).
-   - `purge_before` = `(now() at time zone 'Asia/Jakarta')::date - p_retention_days`. `from_day` is clamped to at least `purge_before`, so a day that may already be purged is never recomputed from what's left of it.
+   - `purge_before` = `(now() at time zone 'Asia/Jakarta')::date - p_retention_days`. The overlap start (`max(day) - 2`) is clamped to at least `purge_before`, so a day that may already be purged is never recomputed from what's left of it. The first-run backfill isn't clamped: nothing has been purged yet, so every day is complete.
    - Nothing is rolled up when `from_day > yesterday` or there are no raw events.
    - Today is never rolled up.
 3. **Rollup:** for WIB days `from_day..yesterday`, group raw events by `((created_at at time zone 'Asia/Jakarta')::date, event_name)` and upsert with `on conflict (day, event_name) do update set events, visitors, updated_at = now()`. Re-running produces identical totals.
@@ -171,6 +171,6 @@ The privacy page contains the 180-day sentence, and its existing axe check still
 
 - **The weekly "visitors" figure overcounts repeat visitors.** Mitigation: the chart caption says so, and unique-person counts stay in the 180-day raw reports.
 - **A missed cron run.** Mitigation: the rollup window starts 2 days before the latest totals and backfills any gap, and the purge only deletes whole days that already have totals.
-- **Partial-day recompute.** Mitigation: the purge works in whole WIB days, and the rollup never reaches back to the purge boundary.
+- **Partial-day recompute.** Mitigation: the purge works in whole WIB days, and the overlap recompute never reaches back past the purge boundary.
 - **A large delete after long downtime.** Mitigation: batches of 10,000, and at most 100 batches per run.
 - **Time zone.** Days are WIB, while the existing 7/30/90-day reports use a rolling window (`now − N days`). The two views can differ slightly at the edges; the caption says the trend runs "sampai kemarin" (up to yesterday).
