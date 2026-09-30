@@ -31,7 +31,8 @@ test.describe("SEO endpoints", () => {
 
   test("the home page head has canonical, Open Graph, Twitter and organization data", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/$/);
+    // Next.js writes the home canonical as the bare origin (with or without "/").
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /^https?:\/\/[^/]+\/?$/);
     await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "CNS Beauty");
     await expect(page.locator('meta[property="og:image"]').first()).toHaveAttribute("content", /opengraph-image/);
     await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
