@@ -40,3 +40,11 @@ describe("catalog client components", () => {
     expect(readFileSync("src/services/catalog/options.ts", "utf8")).not.toMatch(/from "zod/);
   });
 });
+
+describe("public env URL whitespace", () => {
+  it("trims pasted whitespace from URLs, as the former Zod schema did", () => {
+    const env = fromPublic({ NEXT_PUBLIC_SITE_URL: "https://cnsbeauty.id\n", NEXT_PUBLIC_SUPABASE_URL: " https://x.supabase.co\t" });
+    expect(env.NEXT_PUBLIC_SITE_URL).toBe("https://cnsbeauty.id");
+    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe("https://x.supabase.co");
+  });
+});

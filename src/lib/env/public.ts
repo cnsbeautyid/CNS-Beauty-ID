@@ -42,8 +42,10 @@ function isUrl(value: string): boolean {
 
 export function parseClientEnv(source: Record<string, string | undefined>): ClientEnv {
   const issues: string[] = [];
-  const siteUrl = blankToUndefined(source.NEXT_PUBLIC_SITE_URL) ?? DEFAULT_SITE_URL;
-  const supabaseUrl = blankToUndefined(source.NEXT_PUBLIC_SUPABASE_URL);
+  // URLs are trimmed like z.url() did (a pasted env value often ends in a newline);
+  // the key is not, matching the former optional string rule.
+  const siteUrl = blankToUndefined(source.NEXT_PUBLIC_SITE_URL)?.trim() ?? DEFAULT_SITE_URL;
+  const supabaseUrl = blankToUndefined(source.NEXT_PUBLIC_SUPABASE_URL)?.trim();
   const key = blankToUndefined(source.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 
   if (!isUrl(siteUrl)) issues.push("NEXT_PUBLIC_SITE_URL: Invalid URL");
