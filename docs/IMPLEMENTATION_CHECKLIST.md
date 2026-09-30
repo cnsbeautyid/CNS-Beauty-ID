@@ -15,7 +15,7 @@
 - [x] RAG knowledge (Phase 10 — approved-only lexical retrieval, reviewer-guarded approvals, auto-chunking; embeddings later)
 - [x] Basic AI (Phase 9 — streaming concierge via nara/agnes OpenAI-compatible gateway, controlled tools, logging, handoff; needs LLM_BASE_URL/LLM_API_KEY)
 - [x] Account (Phase 8 — dashboard, orders + reorder, wishlist, profile & addresses, DB cart after login)
-- [ ] Admin catalog/order
+- [x] Admin catalog/order (Phase 15 — dashboard KPIs, orders, products + claim approval, inventory, customers, resellers, knowledge, audit log)
 
 ## P1
 - [x] Skin Quiz (Phase 11 — /skin-quiz, rule-based quiz-v1 scoring, routine, add routine to cart)

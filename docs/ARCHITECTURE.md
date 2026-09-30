@@ -2,9 +2,56 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-09-30 (Phase 14)
-- **Current phase:** Phase 14 Reseller (partner programme and portal), done and validated
-- **Next phase:** Phase 15
+- **Last updated:** 2026-09-30 (Phase 15)
+- **Current phase:** Phase 15 Admin (core operations), done and validated
+- **Next phase:** Phase 16 Analytics
+
+## Phase 15 summary
+
+**RBAC, as it exists in the live DB:** `public.user_roles` with `app_role` = customer / admin / owner (2 admins, 2 owners today). `private.has_any_role()` treats owner as every staff role, and ~200 `staff_*` RLS policies already grant admins access. Decision (owner): keep admin/owner for now, with owner = super_admin (only owners manage `user_roles`). The PRD's granular content_editor / customer_service roles are deferred.
+
+- **Authorization** (`services/admin/auth.ts`):
+  - `getStaff()` reads the caller's own `user_roles` rows through RLS and never takes a role from the browser.
+  - `requireStaff(path)` on every page: guests are redirected to sign-in, and signed-in non-staff get a **404** so the area isn't advertised.
+  - `authorizeStaff()` is called first in every server action, and refuses with "Akses ditolak".
+  - `app/admin/layout.tsx` renders the admin chrome only for staff and is noindex. The admin area sits outside the storefront shell.
+- **Audit log** (migration `20260930062959_admin_audit_log`, applied with owner approval):
+  - `public.admin_audit_log {actor_id, action entity.verb, entity_type, entity_id, summary jsonb, created_at}`.
+  - Staff insert only as themselves (`actor_id = auth.uid()`) and read everything.
+  - There are no UPDATE/DELETE policies, and those privileges are revoked. A trigger rejects UPDATE/DELETE for everyone, including service role and superuser.
+  - Every successful admin action writes one entry with the changed fields (`recordAudit`). The entry is a second write after the action, not in the same transaction; a failed audit insert is logged.
+- **Modules** (`/admin/*`):
+  - **Dashboard**, last 30 days: GMV (paid and later), average order value, customers and new customers, repeat-purchase rate, AI conversations and escalations, AI-assisted GMV, and partner sales. **Conversion is shown as "—"** until analytics events exist (Phase 16). An action queue lists: payments to confirm, orders to ship, partner applications, knowledge to review, copy/claims not approved, and low stock.
+  - **Orders:**
+    - The list has status and search filters (URL state via next/form), paginated. Search terms go through `sanitizeSearch()` before any PostgREST `or()` filter.
+    - Detail shows items, totals, status history, payment, and **payment proofs as 10-minute signed URLs** (private bucket, staff read policy).
+    - Actions follow `allowedOrderActions`:
+      - confirm payment → `mark_order_paid` for the full total (also credits loyalty);
+      - cancel with a required reason → `release_order`, which restores stock, coupon use and points;
+      - process / ship (courier and tracking number) / deliver → a conditional status update plus a history row with `changed_by`.
+    - These use the **service role**, because `mark_order_paid` / `release_order` are service-role only and `order_status_history` has no staff insert policy. They show "kunci layanan server belum dikonfigurasi" until `SUPABASE_SERVICE_ROLE_KEY` is set.
+  - **Products:**
+    - Price, compare-at price, stock, low-stock threshold, status and featured flag (RHF + Zod, `productUpdateSchema`).
+    - Approval of description/positioning, benefits and FAQs, with an optional evidence reference. This runs as the admin, so the review triggers stamp `reviewed_by` from `auth.uid()`, and editing approved text sends it back to review.
+    - Text itself is still edited in the DB.
+  - **Inventory:** products sorted by headroom above the low-stock threshold, with an inline absolute stock setter.
+  - **Customers:** read-only, searchable and paginated, with paid-order count and spend.
+  - **Resellers:**
+    - Approving a pending application at a level (dropshipper → level 0) is conditional on `pending`, so it can't happen twice. It then upserts `partner_accounts`, and reverts the application if that upsert fails. Rejection is also offered.
+    - Partner level and activate/deactivate.
+    - Application history.
+  - **Knowledge:** read the body, then approve / return to draft / archive. It runs as the admin, so `knowledge_review_guard` records a human approver.
+  - **AI / Content / Analytics:** read-only summaries: AI conversations, escalations, safety flags, recommendations and AI orders; content status counts; analytics events by name. Conversation contents are not shown.
+  - **Audit log:** the latest 100 entries with actor and details.
+- **Verified on the live DB** in a rolled-back transaction:
+  - A customer can't update products, approve claims, see other profiles or create partner accounts.
+  - An admin can update products, approve a benefit (`reviewed_by` = admin) and a knowledge document (`approved_by` = admin), read all profiles, and approve an application and upsert its partner.
+  - Audit log: a customer can't insert or read it, an admin can't spoof `actor_id`, and nobody can update or delete rows.
+  - Security advisors: nothing new (only the existing leaked-password warning).
+- **Also in this phase:**
+  - The reseller application form uses `useWatch` (React Compiler-safe).
+  - The catalog search E2E retries across hydration, fixing a pre-existing flake.
+- **Not covered by E2E:** signed-in admin flows (the suite never signs in to live Auth). CLAUDE.md's "Admin → Product Management" E2E needs a test staff account on a non-production project (Phase 20).
 
 ## Phase 14 summary
 
@@ -662,3 +709,4 @@ Follow master prompt §26, with these gates:
 | 12 | pass | pass | 133/133 (incl. routine model, routine actions, profile/routine AI tool) | pass | 189 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-in routine flows covered by integration tests + live RLS check |
 | 13 | pass | pass | 145/145 (incl. loyalty model, redeem action, checkout points, loyalty AI tool) | pass | 191 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Ledger lockdown verified on the live DB |
 | 14 | pass | pass | 161/161 (incl. reseller model, application action, partner AI tools) | pass | 207 pass, 13 skipped (device-specific; coupon test waits for the service-role key). Signed-out paths + axe on `/reseller`; partner RLS verified on the live DB |
+| 15 | pass | pass | 182/182 (incl. admin model, admin action authorization/audit integration) | pass | 231 pass, 13 skipped; 4 failed on `ConnectTimeoutError` / slow responses from the live Supabase during the run (cart/catalog specs untouched by Phase 15; they passed in the previous run and in isolation). All 28 new admin E2E pass (14 tests × 2 devices) |
