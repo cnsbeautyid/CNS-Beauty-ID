@@ -29,6 +29,7 @@
 - [x] Advanced analytics (Phase 16: event contract v1, server-only ingestion, funnels, conversion KPI, privacy page)
 - [x] Analytics retention (Phase 18: 180-day raw events, anonymous daily totals, admin trend)
 - [x] SEO (Phase 19: robots, sitemap, share image, canonicals, JSON-LD, /faq, /kontak)
+- [x] Performance (Phase 20: first-load JS 339–346 → 210–217 kB, TBT −80–97%, JS budget test, favicon 100 → 3.7 kB)
 
 ## P2
 - [ ] Voice AI

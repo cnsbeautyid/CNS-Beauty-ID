@@ -1,4 +1,4 @@
-import { parseClientEnv } from "./schema";
+import { parseClientEnv } from "./public";
 
 // Next.js only inlines NEXT_PUBLIC_* values that are referenced literally,
 // so each variable is listed explicitly rather than passing process.env.

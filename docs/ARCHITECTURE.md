@@ -2,9 +2,35 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-10-01 (Phase 19)
-- **Current phase:** Phase 19 SEO, done and validated
-- **Next phase:** Phase 20 Performance (then Accessibility, E2E, Production hardening per the master prompt)
+- **Last updated:** 2026-10-01 (Phase 20)
+- **Current phase:** Phase 20 Performance, done and validated
+- **Next phase:** Phase 21 Accessibility (then E2E, Production hardening per the master prompt)
+
+## Phase 20 summary
+
+Owner decision (2026-10-01): cut the shared JavaScript plus quick wins; fonts and critical CSS are out of scope. Spec: `docs/superpowers/specs/2026-10-01-performance-design.md`.
+
+**Before → after** (local production build, Lighthouse 12 mobile). The JS column is first-load JavaScript transferred.
+
+| Page | Score (simulated) | LCP (simulated) | LCP (real throttling) | TBT | First-load JS |
+|---|---|---|---|---|---|
+| `/` | 74 → **91** | 5.26 → 3.49s | 1.75 → **1.60s** | 286 → **41ms** | 339 → **210 kB** |
+| `/produk` | 79 → **86** | 4.69 → 4.16s | 1.62 → **1.57s** | 223 → **38ms** | 346 → **217 kB** |
+| product page | 96 → **99** | 1.88 → 2.00s | — | 210 → **18ms** | 342 → **213 kB** |
+| `/beauty-concierge` | 99 → **100** | 1.73 → 1.86s | — | 112 → **20ms** | 341 → **212 kB** |
+| `/faq` | 86 → **100** | 1.96 → 1.87s | — | 517 → **14ms** | 339 → **210 kB** |
+
+CLS is 0 everywhere, before and after. With real throttling, `/` and `/produk` both score 99. The remaining simulated-LCP gap on `/` and `/produk` comes from Lighthouse's model gating text LCP on render-blocking CSS and fonts; that's the next lever.
+
+- **Zod out of every page:**
+  - `lib/env/public.ts` does the client env parsing with plain checks; `schema.ts` re-exports it and keeps full Zod for the server env.
+  - `zod/mini` is used for the shared AI protocol and conversation persistence, with the same rules and the unchanged tests.
+  - The catalog option lists moved to a Zod-free `services/catalog/options.ts`, used by the client sort control.
+  - Form pages keep full Zod with React Hook Form.
+- **Supabase auth client after load and idle:** `useConversationSession` imports it through `scheduleAfterLoadIdle` (`lib/utils/idle.ts`). The 66 kB chunk loads after the page and the browser are idle, never on first view. Same-tab sign-out still clears the conversation immediately; cross-tab sign-out and session expiry are detected after that idle period.
+- **Favicon:** 512×512 at 100 kB → 48×48 at 3.7 kB.
+- **Budget guard:** `tests/e2e/performance.spec.ts` checks the five key pages on desktop and mobile. First-load JS must be at most 220 kB, with no `GoTrueClient` before `load`, and the favicon under 10 kB. Future global client imports will fail it.
+- **Still open:** font files (~1.3–1.5s to arrive) and the render-blocking stylesheet (~730ms).
 
 ## Phase 19 summary
 
@@ -821,3 +847,4 @@ Follow master prompt §26, with these gates:
 | 17 | pass | pass | 251/251 (incl. conversation persistence, hydration gate, owner key, image filter, session state, rail model, concierge page type) | pass | 266 pass, 16 skipped, 0 failed (incl. 16 concierge-page E2E: inline stream, reload/panel continuity, one chat surface, rail chips, composer above the fold, mobile/desktop layout, no-JS content, axe) |
 | 18 | pass | pass | 268/268 (incl. trend model, cron auth, retention cron route integration) | pass | 262 pass, 16 skipped; 4 `layout.spec` design-preview specs failed only because the manually started server lacked `ENABLE_DESIGN_PREVIEW=true` (Playwright's own webServer sets it); rerun with it: `layout.spec` 27 pass. Incl. privacy-page retention sentence + axe. SQL verified on live in rolled-back transactions (6 checks + RLS) |
 | 19 | pass | pass | 287/287 (incl. robots/sitemap/JSON-LD builders, sitemap + FAQ readers) | pass | 281 pass, 16 skipped; 3 failed on test expectations (header spec still listed Artikel; home canonical is the bare origin), both fixed → `seo.spec` + `layout.spec` 45 pass. Screenshots: `/faq`, `/kontak`, share card |
+| 20 | pass | pass | 301/301 (incl. env-public guards, scheduleAfterLoadIdle, unchanged protocol/persistence/env tests) | pass | 298 pass, 16 skipped, 0 failed (incl. 12 performance-budget E2E). Lighthouse before/after in the Phase 20 summary |
