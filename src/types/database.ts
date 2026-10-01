@@ -240,6 +240,30 @@ export type Database = {
           },
         ]
       }
+      analytics_daily_events: {
+        Row: {
+          day: string
+          event_name: string
+          events: number
+          updated_at: string
+          visitors: number
+        }
+        Insert: {
+          day: string
+          event_name: string
+          events: number
+          updated_at?: string
+          visitors: number
+        }
+        Update: {
+          day?: string
+          event_name?: string
+          events?: number
+          updated_at?: string
+          visitors?: number
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           ai_conversation_id: string | null
@@ -3139,6 +3163,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_points: {
+        Args: {
+          p_points: number
+          p_reason: string
+          p_staff_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       analytics_event_counts: {
         Args: { p_since: string }
         Returns: {
@@ -3155,14 +3188,13 @@ export type Database = {
           visitors: number
         }[]
       }
-      admin_adjust_points: {
-        Args: {
-          p_points: number
-          p_reason: string
-          p_staff_id: string
-          p_user_id: string
-        }
-        Returns: Json
+      analytics_rollup_and_purge: {
+        Args: { p_retention_days?: number }
+        Returns: {
+          days_rolled_up: number
+          rows_deleted: number
+          rows_upserted: number
+        }[]
       }
       award_birthday_points: { Args: { p_today?: string }; Returns: Json }
       kpi_dashboard: { Args: { p_from: string; p_to: string }; Returns: Json }

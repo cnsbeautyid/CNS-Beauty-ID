@@ -27,6 +27,7 @@
 - [x] Reseller Portal (Phase 14 — programme page + application, partner portal: dashboard, price list, orders)
 - [x] Reseller AI (Phase 14 — partner mode with partner price/sales tools, no commission)
 - [x] Advanced analytics (Phase 16: event contract v1, server-only ingestion, funnels, conversion KPI, privacy page)
+- [x] Analytics retention (Phase 18: 180-day raw events, anonymous daily totals, admin trend)
 
 ## P2
 - [ ] Voice AI
