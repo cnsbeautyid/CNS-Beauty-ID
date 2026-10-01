@@ -2,9 +2,33 @@
 
 Living document. Updated at the end of every phase.
 
-- **Last updated:** 2026-10-01 (Phase 20)
-- **Current phase:** Phase 20 Performance, done and validated
-- **Next phase:** Phase 21 Accessibility (then E2E, Production hardening per the master prompt)
+- **Last updated:** 2026-10-01 (Phase 21)
+- **Current phase:** Phase 21 Accessibility, done and validated
+- **Next phase:** Phase 22 E2E testing (then Production hardening per the master prompt)
+
+## Phase 21 summary
+
+Owner decision (2026-10-01): fix the confirmed WCAG 2.2 AA failures and add permanent guards. Spec: `docs/superpowers/specs/2026-10-01-accessibility-design.md`.
+
+- **Baseline:** axe (WCAG 2.2 AA tags, whole page) found 0 violations across 36 public states: 18 pages on desktop and mobile, plus the AI panel and the mobile menu open. Scripted keyboard, reflow and form checks found the real issues.
+- **Fixed:**
+  - **Skip link** (`src/components/layout/skip-link.tsx`): moves focus to `<main id="main-content">`, which previously stayed on `<body>`. Still a plain anchor without JavaScript.
+  - **Reflow at 320px (1.4.10):**
+    - Shared buttons may wrap: `whitespace-nowrap` and fixed heights became `min-h-*` with padding, so single-line buttons are unchanged.
+    - The catalog content column got `min-w-0`.
+    - The catalog Filter and sort controls wrap.
+    - The `/kontak` WhatsApp number stays on one line.
+    - Before, `/`, the product page, `/kontak`, `/produk` and category pages all scrolled sideways.
+  - **Focus not obscured (2.4.11):** `scroll-padding-top` (the `--header-offset` token) and, on mobile product pages, `scroll-padding-bottom` for the Add-to-Cart bar. Without it, tabbing on `/produk` hid the sort control, product cards and filter inputs under the sticky header, on desktop and mobile (proven by the guard with scroll padding disabled).
+- **Checked and fine:** sign-in errors (`aria-invalid`, `aria-describedby`, focus to the first invalid field), product-card focus rings, reduced motion, target size.
+- **Guards** (`tests/e2e/a11y.spec.ts`, desktop and mobile):
+  - an axe sweep of every public page and both open overlays;
+  - skip-link focus;
+  - every Tab stop in `<main>`, forward and backward, clear of the sticky header and the mobile Add-to-Cart bar, on a product page and the listing;
+  - no horizontal scroll at 320px on every public page.
+
+  Navigation settles (network idle, no `loading.tsx` skeleton) before each check, because `/checkout` redirects and the streamed pages swap a skeleton `<main>`.
+- **Still open:** pages behind sign-in (need a test account), manual screen-reader passes, a conformance statement.
 
 ## Phase 20 summary
 
@@ -848,3 +872,4 @@ Follow master prompt §26, with these gates:
 | 18 | pass | pass | 268/268 (incl. trend model, cron auth, retention cron route integration) | pass | 262 pass, 16 skipped; 4 `layout.spec` design-preview specs failed only because the manually started server lacked `ENABLE_DESIGN_PREVIEW=true` (Playwright's own webServer sets it); rerun with it: `layout.spec` 27 pass. Incl. privacy-page retention sentence + axe. SQL verified on live in rolled-back transactions (6 checks + RLS) |
 | 19 | pass | pass | 287/287 (incl. robots/sitemap/JSON-LD builders, sitemap + FAQ readers) | pass | 281 pass, 16 skipped; 3 failed on test expectations (header spec still listed Artikel; home canonical is the bare origin), both fixed → `seo.spec` + `layout.spec` 45 pass. Screenshots: `/faq`, `/kontak`, share card |
 | 20 | pass | pass | 301/301 (incl. env-public guards, scheduleAfterLoadIdle, unchanged protocol/persistence/env tests) | pass | 298 pass, 16 skipped, 0 failed (incl. 12 performance-budget E2E). Lighthouse before/after in the Phase 20 summary |
+| 21 | pass | pass | 305/305 (incl. skeleton-id guard) | pass | 356 pass, 16 skipped, 0 failed (incl. the a11y guards: axe sweep with 404/design-system/empty search, skip link, every-Tab-stop focus vs sticky bars, reflow at 320px) |
