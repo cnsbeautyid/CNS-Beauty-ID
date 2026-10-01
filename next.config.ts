@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+import { assertProductionSiteUrl } from "./src/lib/env/site-url";
+
+assertProductionSiteUrl(process.env.VERCEL_ENV, process.env.NEXT_PUBLIC_SITE_URL);
+
 // Baseline security headers. A full Content-Security-Policy is deferred to
 // Phase 21 (Production Hardening), once the payment provider and AI streaming
 // origins are known.

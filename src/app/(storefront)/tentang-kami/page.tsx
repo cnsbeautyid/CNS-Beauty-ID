@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { ArchMedia } from "@/components/layout/arch-media";
 import { PageHero } from "@/components/layout/page-hero";
+import { ROUTES } from "@/constants/routes";
 import { ABOUT_COPY } from "@/content/about";
 import { RitualMeaning } from "@/features/about/ritual-meaning";
 import { BrandValues } from "@/features/home/brand-values";
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   title: "Tentang Kami",
   description:
     "CNS Beauty Skincare by Wina Ranesa: ritual kecil untuk merawat dan mencintai diri sendiri setiap hari.",
+  alternates: { canonical: ROUTES.about },
 };
 
 export default function AboutPage() {

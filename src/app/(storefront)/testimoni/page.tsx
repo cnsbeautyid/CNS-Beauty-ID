@@ -15,6 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Testimoni",
     description: "Cerita dan ulasan asli dari pelanggan CNS Beauty.",
+    alternates: { canonical: ROUTES.testimonials },
     // An empty review page has nothing for search engines yet.
     robots: testimonials.length === 0 ? { index: false, follow: true } : undefined,
   };

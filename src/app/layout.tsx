@@ -4,6 +4,7 @@ import { Cormorant_Garamond, Inter } from "next/font/google";
 import { clientEnv } from "@/lib/env/client";
 
 import "./globals.css";
+import { SHARE_DEFAULTS } from "@/lib/seo/share";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -28,6 +29,8 @@ export const metadata: Metadata = {
   description:
     "CNS Beauty — Your Skin. Your Ritual. Your Confidence. Perawatan kulit untuk ritual kecil mencintai diri sendiri setiap hari.",
   applicationName: "CNS Beauty",
+  openGraph: { ...SHARE_DEFAULTS, type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

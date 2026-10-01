@@ -11,7 +11,6 @@ test.describe("Site header", () => {
       "Tentang Kami",
       "Manfaat",
       "Testimoni",
-      "Artikel",
       "Kontak",
     ]);
     await expect(nav.getByRole("link", { name: "Beranda" })).toHaveAttribute("aria-current", "page");

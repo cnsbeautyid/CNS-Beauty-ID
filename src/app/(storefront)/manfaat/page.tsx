@@ -14,6 +14,7 @@ import { getMappedConcerns } from "@/services/catalog/concerns";
 export const metadata: Metadata = {
   title: "Manfaat",
   description: "Kenali kebutuhan kulitmu dan temukan ritual perawatan CNS Beauty yang sesuai.",
+  alternates: { canonical: ROUTES.benefits },
 };
 
 export const revalidate = 300;
