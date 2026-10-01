@@ -2,6 +2,43 @@
 
 This package is the implementation baseline for `cns-beauty-commerce`.
 
+## Status
+
+Phases 0–21 of the master prompt are done and merged into `main`:
+
+- **Foundation and storefront:** homepage, brand pages, catalog, product detail, cart, login-required checkout with manual bank transfer, and customer account.
+- **AI:** Beauty Concierge (streaming, grounded tools, knowledge base) and the full-page `/beauty-concierge`.
+- **Customer features:** Skin Quiz, routines, CNS Rewards loyalty, and the reseller programme with a partner portal.
+- **Admin:** the staff admin area with an audit log.
+- **Analytics:** first-party analytics with 180-day retention.
+- **SEO:** robots, sitemap, structured data, `/faq` and `/kontak`.
+- **Performance:** first-load JS of about 210 kB, with a budget test.
+- **Accessibility:** WCAG 2.2 AA fixes, with guards.
+
+**Next:** Phase 22, E2E testing with a local Supabase stack and test accounts for signed-in flows; then production hardening.
+
+Per-phase decisions, validation results and open items: `docs/ARCHITECTURE.md`.
+
+## Deploy (Vercel)
+
+1. **Create the Vercel project.** Create a Vercel project from this repository with the Next.js preset; `vercel.json` already defines the two daily cron jobs. Production deploys come from `main`.
+2. **Set the Production environment variables:**
+
+   | Variable | Required | Notes |
+   |---|---|---|
+   | `NEXT_PUBLIC_SITE_URL` | yes | The public domain, e.g. `https://cnsbeauty.id`. Production builds **fail on purpose** if it is missing or `localhost`. Canonicals, the sitemap and sign-up email links use it. |
+   | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Public values. Product images are only allowed from this Supabase URL. |
+   | `SUPABASE_SERVICE_ROLE_KEY` | yes | Server only. Used by analytics, cron jobs, coupons and admin actions. |
+   | `CRON_SECRET` | yes | Without it the nightly jobs (order expiry, analytics retention) refuse to run. |
+   | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | optional | Beauty AI. Without them the concierge says it is unavailable and offers WhatsApp. |
+   | `ENABLE_DESIGN_PREVIEW` | — | Leave **unset** in production. |
+
+3. **Configure Supabase Auth** (URL Configuration): set the Site URL to the production domain, and allow `https://<domain>/auth/callback` as a redirect URL.
+4. **After the first deploy:**
+   - check that `/robots.txt` allows crawling and lists the sitemap;
+   - submit `/sitemap.xml` in Google Search Console;
+   - check the next day's logs for a `200` from `/api/cron/expire-orders` and `/api/cron/analytics-retention`.
+
 ## Contents
 
 - `CLAUDE.md` — persistent engineering rules for Claude Code.
