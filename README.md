@@ -1,4 +1,4 @@
-# CNS Beauty Commerce — Master Development Specification
+# CNS Beauty Commerce
 
 This package is the implementation baseline for `cns-beauty-commerce`.
 
